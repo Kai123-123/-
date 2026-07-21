@@ -1,0 +1,20 @@
+{
+  "envId": "{{envId}}",
+  "framework": {
+    "name": "quantum-tunnel-web",
+    "plugins": {
+      "client": {
+        "use": "@cloudbase/framework-plugin-website",
+        "inputs": {
+          "outputPath": ".",
+          "cloudPath": "/",
+          "ignore": [
+            "cloudbaserc.json",
+            "tunnel.log",
+            "腾讯云部署说明.md"
+          ]
+        }
+      }
+    }
+  }
+}

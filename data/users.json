@@ -1,0 +1,13 @@
+[
+  {
+    "username": "123",
+    "passwordHash": "$2b$10$PophAF8UtuGLMR3mEN8ZWeDjpXt/NTEv10VxUnJqrS0AdqeeTG/9m",
+    "createdAt": "2026-07-15T07:12:38.844Z"
+  },
+  {
+    "username": "admin",
+    "role": "admin",
+    "passwordHash": "$2b$10$3VtbGLAed/SJSSLuhrWUJ..l/AhjnINRVsreU9CSNEKSFPBesZUUS",
+    "createdAt": "2026-07-15T12:43:30.238Z"
+  }
+]

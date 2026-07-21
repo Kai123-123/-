@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>量子隧穿可视化仿真平台</title>
+  <link rel="stylesheet" href="https://db.onlinewebfonts.com/c/a64ff11d2c24584c767f6257e880dc65?family=Helvetica+Regular">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-icon">∿</span>
+      <span>量子隧穿可视化仿真平台</span>
+    </div>
+    <nav>
+      <button class="nav-link active" data-page="home">首页</button>
+      <button class="nav-link" data-page="oneD">一维模型</button>
+      <button class="nav-link" data-page="stm">STM 应用</button>
+      <button class="nav-link" data-page="alpha">α 衰变</button>
+      <button class="nav-link" data-page="flash">闪存隧穿</button>
+      <button class="nav-link" data-page="rtd">RTD</button>
+    </nav>
+    <div class="auth-bar">
+      <span id="authStatus">未登录：仅开放一维模型</span>
+      <button id="authOpenBtn" class="auth-btn" data-auth-action="open">登录 / 注册</button>
+      <button id="authLogoutBtn" class="auth-btn ghost hidden" data-auth-action="logout">退出</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="page active home-page learnly-page">
+      <video class="learnly-bg-video" autoplay muted loop playsinline poster="./assets/quantum-vinyl-background-scene.png" aria-hidden="true">
+        <source src="./assets/quantum-vinyl-hero-video.mp4" type="video/mp4">
+      </video>
+      <div class="learnly-shell">
+        <div class="learnly-main">
+          <section class="learnly-left liquid-glass animate-fade-up delay-1">
+            <p class="learnly-kicker">量子隧穿学习平台</p>
+            <h1 class="learnly-title">
+              <span>看见</span>量子隧穿
+              <em>从原理到器件</em>
+            </h1>
+            <p class="learnly-lead">通过任务驱动的渐进式探究，把量子隧穿从抽象概念转化为可预测、可观察、可解释的学习路径。</p>
+            <div class="learnly-search">
+              <input id="homeQuickInput" type="text" placeholder="输入 oneD / STM / alpha / flash / RTD 快速进入">
+              <button type="button" data-action="home-search">进入</button>
+            </div>
+            <div class="learnly-progress">
+              <div>
+                <strong id="homeProgressPercent">0%</strong>
+                <span>总体进度</span>
+              </div>
+              <div class="home-progress-track"><span id="homeProgressBar"></span></div>
+              <p id="homeProgressState">完成核心任务后解锁拓展应用</p>
+              <div id="homeProgressList" class="home-progress-list"></div>
+            </div>
+          </section>
+
+          <section class="learnly-cards animate-fade-up delay-3" aria-label="仿真模块">
+            <article class="learnly-card module-card" data-page="oneD">
+              <div class="learnly-card-bg oneD-bg"></div>
+              <div class="learnly-card-visual visual-oned" aria-hidden="true">
+                <canvas class="card-scene" data-scene="oneD" width="420" height="300"></canvas>
+              </div>
+              <div class="learnly-card-side"><span>一维方势垒</span></div>
+              <div class="learnly-card-content">
+                <div>
+                  <h2>一维<br>方势垒</h2>
+                  <p>势垒、波函数、透射率</p>
+                </div>
+                <button class="learnly-card-go" data-page="oneD">进入</button>
+              </div>
+            </article>
+            <article class="learnly-card module-card" data-page="stm">
+              <div class="learnly-card-bg stm-bg"></div>
+              <div class="learnly-card-visual visual-stm" aria-hidden="true">
+                <canvas class="card-scene" data-scene="stm" width="320" height="300"></canvas>
+              </div>
+              <div class="learnly-card-side"><span>STM 应用</span></div>
+              <div class="learnly-card-content">
+                <div>
+                  <h2>STM<br>应用</h2>
+                  <p>距离变化与指数电流</p>
+                </div>
+                <button class="learnly-card-go" data-page="stm">进入</button>
+              </div>
+            </article>
+            <article class="learnly-card module-card" data-page="alpha">
+              <div class="learnly-card-bg alpha-bg"></div>
+              <div class="learnly-card-visual visual-alpha" aria-hidden="true">
+                <canvas class="card-scene" data-scene="alpha" width="320" height="300"></canvas>
+              </div>
+              <div class="learnly-card-side"><span>α 衰变</span></div>
+              <div class="learnly-card-content">
+                <div>
+                  <h2>α 粒子<br>衰变</h2>
+                  <p>库仑势垒与穿透趋势</p>
+                </div>
+                <button class="learnly-card-go" data-page="alpha">进入</button>
+              </div>
+            </article>
+            <article class="learnly-card module-card" data-page="flash">
+              <div class="learnly-card-bg flash-bg"></div>
+              <div class="learnly-card-visual visual-flash" aria-hidden="true">
+                <canvas class="card-scene" data-scene="flash" width="320" height="300"></canvas>
+              </div>
+              <div class="learnly-card-side"><span>闪存隧穿</span></div>
+              <div class="learnly-card-content">
+                <div>
+                  <h2>闪存<br>隧穿</h2>
+                  <p>Fowler-Nordheim 写入/擦除</p>
+                </div>
+                <button class="learnly-card-go" data-page="flash">进入</button>
+              </div>
+            </article>
+            <article class="learnly-card module-card" data-page="rtd">
+              <div class="learnly-card-bg rtd-bg"></div>
+              <div class="learnly-card-visual visual-rtd" aria-hidden="true">
+                <canvas class="card-scene" data-scene="rtd" width="320" height="300"></canvas>
+              </div>
+              <div class="learnly-card-side"><span>RTD 器件</span></div>
+              <div class="learnly-card-content">
+                <div>
+                  <h2>RTD<br>器件</h2>
+                  <p>共振透射与负微分电阻</p>
+                </div>
+                <button class="learnly-card-go" data-page="rtd">进入</button>
+              </div>
+            </article>
+          </section>
+        </div>
+
+        <footer class="learnly-bottom liquid-glass animate-fade-up delay-5">
+          <h2>核心概念学习 → 典型现象应用 → 工程器件迁移</h2>
+          <button class="learnly-bottom-btn" data-page="oneD">开始第一个核心任务</button>
+        </footer>
+        <aside class="home-now-widget liquid-glass animate-fade-up delay-4" aria-label="学习状态">
+          <div class="home-now-icon">ψ</div>
+          <div>
+            <strong>正在进行</strong>
+            <p>预测 → 观察 → 解释</p>
+            <div class="home-eq-bars"><span></span><span></span><span></span><span></span></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="oneD" class="page sim-layout">
+      <aside class="panel-stack module-control-stack">
+        <div class="card">
+          <h2><span>■</span>模型摘要</h2>
+          <p>矩形势垒模型展示一维量子隧穿过程。调节参数后可观察势垒、粒子能量、波函数实部、透射率和反射率之间的关系。</p>
+        </div>
+        <div class="card">
+          <h2><span>☰</span>矩形势垒参数</h2>
+          <div id="oneDControls"></div>
+          <div class="action-row">
+            <button class="primary-btn" data-action="update-oneD">更新图像</button>
+            <button class="outline-btn small" data-action="reset-oneD">恢复默认</button>
+            <button class="outline-btn small" data-action="save-oneD">保存当前图</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2><span>↔</span>绘图范围</h2>
+          <div id="rangeControls"></div>
+        </div>
+      </aside>
+      <section class="plot-panel module-visual-stack">
+        <div class="tabs">
+          <button class="tab active" data-plot="oneD2d">势垒与波函数实部</button>
+          <button class="tab" data-plot="oneD3d">三维立体动图</button>
+        </div>
+        <canvas id="oneDCanvas" width="960" height="720"></canvas>
+      </section>
+      <aside class="panel-stack result-stack module-insight-stack">
+        <div class="card">
+          <h2><span>●</span>计算结果</h2>
+          <div id="oneDResults" class="metrics"></div>
+        </div>
+        <div class="card">
+          <h2><span>ψ</span>物理解释</h2>
+          <p id="oneDExplain"></p>
+        </div>
+        <div class="card linked-card">
+          <h2><span>◎</span>多重表征联动</h2>
+          <p class="linked-help">悬停或点击符号，参数、公式、图像和解释会同步高亮；点击后可锁定，再次点击取消。</p>
+          <div class="symbol-row" id="oneDSymbolChips">
+            <button class="symbol-chip" data-symbol="V0">V₀</button>
+            <button class="symbol-chip" data-symbol="a">a</button>
+            <button class="symbol-chip" data-symbol="E">E</button>
+            <button class="symbol-chip" data-symbol="m">m</button>
+            <button class="symbol-chip" data-symbol="kappa">κ</button>
+            <button class="symbol-chip" data-symbol="T">T</button>
+          </div>
+          <div class="formula-box" id="oneDFormulaBox">
+            <div>
+              <span class="formula-symbol" data-symbol="T">T</span> =
+              1 / [1 +
+              <span class="formula-symbol" data-symbol="V0">V₀</span>² sinh²(<span class="formula-symbol" data-symbol="kappa">κ</span><span class="formula-symbol" data-symbol="a">a</span>)
+              / 4<span class="formula-symbol" data-symbol="E">E</span>(<span class="formula-symbol" data-symbol="V0">V₀</span>-<span class="formula-symbol" data-symbol="E">E</span>)]
+            </div>
+            <div>
+              <span class="formula-symbol" data-symbol="kappa">κ</span> =
+              √[2<span class="formula-symbol" data-symbol="m">m</span>(<span class="formula-symbol" data-symbol="V0">V₀</span>-<span class="formula-symbol" data-symbol="E">E</span>)]
+            </div>
+          </div>
+          <div id="oneDLinkedInfo" class="linked-info">
+            <strong>选择一个符号</strong>
+            <p>把鼠标移到 V₀、a、E、m、κ 或 T 上，查看它在图像、公式和参数表中的对应关系。</p>
+          </div>
+        </div>
+        <div id="learningPanel-oneD" class="learning-panel" data-module="oneD"></div>
+        <div id="aiPanel-oneD" class="ai-panel card" data-ai-module="oneD"></div>
+      </aside>
+    </section>
+
+    <section id="alpha" class="page sim-layout">
+      <aside class="panel-stack module-control-stack">
+        <div class="card">
+          <h2><span>■</span>案例摘要</h2>
+          <p>α 粒子衰变是量子隧穿的经典应用。α 粒子在核内受强核力束缚，核外则受到库仑势垒阻挡。</p>
+        </div>
+        <div class="card">
+          <h2><span>☰</span>α 衰变参数</h2>
+          <div id="alphaControls"></div>
+          <div class="action-row">
+            <button class="primary-btn" data-action="update-alpha">更新 α 衰变图</button>
+            <button class="outline-btn small" data-action="reset-alpha">恢复 α 参数</button>
+            <button class="outline-btn small" data-action="save-alpha">保存当前图</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2><span>ψ</span>核心公式</h2>
+          <ul>
+            <li>库仑势：V(r)=1.44 Z<sub>d</sub>Z<sub>α</sub>/r</li>
+            <li>外转折点：r<sub>2</sub>=1.44 Z<sub>d</sub>Z<sub>α</sub>/E<sub>α</sub></li>
+            <li>势垒越高、越宽，隧穿概率越低。</li>
+          </ul>
+        </div>
+      </aside>
+      <section class="plot-panel module-visual-stack">
+        <canvas id="alphaCanvas" width="1040" height="720"></canvas>
+      </section>
+      <aside class="panel-stack result-stack module-insight-stack">
+        <div id="alphaSummary" class="summary-box"></div>
+        <div class="card linked-card">
+          <h2><span>◎</span>多重表征联动</h2>
+          <p class="linked-help">悬停或点击符号，同步定位参数、公式、势能图和物理解释。</p>
+          <div class="symbol-row">
+            <button class="symbol-chip" data-symbol="Zd">Zd</button>
+            <button class="symbol-chip" data-symbol="Ealpha">Eα</button>
+            <button class="symbol-chip" data-symbol="R">R</button>
+            <button class="symbol-chip" data-symbol="r2">r₂</button>
+            <button class="symbol-chip" data-symbol="P">P</button>
+          </div>
+          <div class="formula-box">
+            <div>V(r)=1.44<span class="formula-symbol" data-symbol="Zd">Zd</span>Zα/r</div>
+            <div><span class="formula-symbol" data-symbol="r2">r₂</span>=1.44<span class="formula-symbol" data-symbol="Zd">Zd</span>Zα/<span class="formula-symbol" data-symbol="Ealpha">Eα</span></div>
+            <div><span class="formula-symbol" data-symbol="P">P</span> 与禁阻区宽度 <span class="formula-symbol" data-symbol="r2">r₂</span>-<span class="formula-symbol" data-symbol="R">R</span> 相关</div>
+          </div>
+          <div id="alphaLinkedInfo" class="linked-info">
+            <strong>选择一个符号</strong>
+            <p>把鼠标移到参数、公式或符号按钮上，查看它在图像、公式、参数和解释中的对应关系。</p>
+          </div>
+        </div>
+        <div id="learningPanel-alpha" class="learning-panel" data-module="alpha"></div>
+        <div id="aiPanel-alpha" class="ai-panel card" data-ai-module="alpha"></div>
+      </aside>
+    </section>
+
+    <section id="stm" class="page sim-layout">
+      <aside class="panel-stack module-control-stack">
+        <div class="card">
+          <h2><span>■</span>案例摘要</h2>
+          <p>STM 是量子隧穿在现代科学仪器中的重要应用。电子隧穿电流对探针与样品距离呈指数敏感。</p>
+        </div>
+        <div class="card">
+          <h2><span>☰</span>STM 参数</h2>
+          <div id="stmControls"></div>
+          <div class="action-row">
+            <button class="primary-btn" data-action="update-stm">更新 STM 图</button>
+            <button class="outline-btn small" data-action="reset-stm">恢复 STM 参数</button>
+            <button class="outline-btn small" data-action="save-stm">保存当前图</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2><span>ψ</span>核心公式</h2>
+          <ul>
+            <li>κ≈0.512√φ Å<sup>-1</sup></li>
+            <li>ψ(d)∝exp(-κd)</li>
+            <li>I<sub>rel</sub>∝V<sub>b</sub>·exp(-2κd)</li>
+          </ul>
+        </div>
+      </aside>
+      <section class="plot-panel module-visual-stack">
+        <canvas id="stmCanvas" width="1040" height="720"></canvas>
+      </section>
+      <aside class="panel-stack result-stack module-insight-stack">
+        <div id="stmSummary" class="summary-box"></div>
+        <div class="card linked-card">
+          <h2><span>◎</span>多重表征联动</h2>
+          <p class="linked-help">悬停或点击符号，同步定位探针距离、势垒、指数衰减和电流曲线。</p>
+          <div class="symbol-row">
+            <button class="symbol-chip" data-symbol="d">d</button>
+            <button class="symbol-chip" data-symbol="phi">φ</button>
+            <button class="symbol-chip" data-symbol="bias">Vb</button>
+            <button class="symbol-chip" data-symbol="kappa">κ</button>
+            <button class="symbol-chip" data-symbol="I">Irel</button>
+          </div>
+          <div class="formula-box">
+            <div><span class="formula-symbol" data-symbol="kappa">κ</span>≈0.512√<span class="formula-symbol" data-symbol="phi">φ</span></div>
+            <div>ψ(<span class="formula-symbol" data-symbol="d">d</span>)∝exp(-<span class="formula-symbol" data-symbol="kappa">κ</span><span class="formula-symbol" data-symbol="d">d</span>)</div>
+            <div><span class="formula-symbol" data-symbol="I">Irel</span>∝<span class="formula-symbol" data-symbol="bias">Vb</span>·exp(-2<span class="formula-symbol" data-symbol="kappa">κ</span><span class="formula-symbol" data-symbol="d">d</span>)</div>
+          </div>
+          <div id="stmLinkedInfo" class="linked-info">
+            <strong>选择一个符号</strong>
+            <p>把鼠标移到参数、公式或符号按钮上，查看它在图像、公式、参数和解释中的对应关系。</p>
+          </div>
+        </div>
+        <div id="learningPanel-stm" class="learning-panel" data-module="stm"></div>
+        <div id="aiPanel-stm" class="ai-panel card" data-ai-module="stm"></div>
+      </aside>
+    </section>
+
+    <section id="flash" class="page sim-layout two-col">
+      <aside class="panel-stack module-control-stack">
+        <div class="card">
+          <h2><span>■</span>案例摘要</h2>
+          <p>闪存写入/擦除依赖电子穿过超薄 SiO₂ 隧穿氧化层。强电场会把氧化层势垒拉成近似三角形，产生 Fowler-Nordheim 隧穿电流。</p>
+        </div>
+        <div class="card">
+          <h2><span>☰</span>闪存隧穿参数</h2>
+          <div id="flashControls"></div>
+          <div class="action-row">
+            <button class="primary-btn" data-action="update-flash">更新闪存图</button>
+            <button class="outline-btn small" data-action="reset-flash">恢复闪存参数</button>
+            <button class="outline-btn small" data-action="save-flash">保存当前图</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2><span>ψ</span>核心公式</h2>
+          <ul>
+            <li>E<sub>ox</sub>≈V<sub>eff</sub>/t<sub>ox</sub></li>
+            <li>J<sub>FN</sub>∝E<sub>ox</sub><sup>2</sup>exp[-Bφ<sup>3/2</sup>/E<sub>ox</sub>]</li>
+            <li>氧化层越薄、栅压越高，隧穿电流通常越大。</li>
+          </ul>
+        </div>
+        <div class="card linked-card">
+          <h2><span>◎</span>多重表征联动</h2>
+          <p class="linked-help">悬停或点击符号，同步定位氧化层、三角势垒、电场和 FN 电流曲线。</p>
+          <div class="symbol-row">
+            <button class="symbol-chip" data-symbol="gateV">Vg</button>
+            <button class="symbol-chip" data-symbol="tox">tox</button>
+            <button class="symbol-chip" data-symbol="phi">φB</button>
+            <button class="symbol-chip" data-symbol="eox">Eox</button>
+            <button class="symbol-chip" data-symbol="j">JFN</button>
+          </div>
+          <div class="formula-box">
+            <div><span class="formula-symbol" data-symbol="eox">Eox</span>≈Veff/<span class="formula-symbol" data-symbol="tox">tox</span></div>
+            <div><span class="formula-symbol" data-symbol="j">JFN</span>∝<span class="formula-symbol" data-symbol="eox">Eox</span>²exp[-B<span class="formula-symbol" data-symbol="phi">φB</span><sup>3/2</sup>/<span class="formula-symbol" data-symbol="eox">Eox</span>]</div>
+            <div>Veff 由 <span class="formula-symbol" data-symbol="gateV">Vg</span> 与阈值修正共同决定</div>
+          </div>
+          <div id="flashLinkedInfo" class="linked-info">
+            <strong>选择一个符号</strong>
+            <p>把鼠标移到参数、公式或符号按钮上，查看它在图像、公式、参数和解释中的对应关系。</p>
+          </div>
+        </div>
+      </aside>
+      <section class="plot-panel module-visual-stack">
+        <canvas id="flashCanvas" width="1040" height="720"></canvas>
+        <div id="flashSummary" class="summary-box"></div>
+        <div id="aiPanel-flash" class="ai-panel card" data-ai-module="flash"></div>
+      </section>
+    </section>
+
+    <section id="rtd" class="page sim-layout two-col">
+      <aside class="panel-stack module-control-stack">
+        <div class="card">
+          <h2><span>■</span>案例摘要</h2>
+          <p>共振隧穿二极管由双势垒量子阱构成。当入射电子能量与阱内准束缚能级对准时，透射率出现尖峰；偏压继续增大后对准被破坏，电流下降。</p>
+        </div>
+        <div class="card">
+          <h2><span>☰</span>RTD 参数</h2>
+          <div id="rtdControls"></div>
+          <div class="action-row">
+            <button class="primary-btn" data-action="update-rtd">更新 RTD 图</button>
+            <button class="outline-btn small" data-action="reset-rtd">恢复 RTD 参数</button>
+            <button class="outline-btn small" data-action="save-rtd">保存当前图</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2><span>ψ</span>核心公式</h2>
+          <ul>
+            <li>E<sub>1</sub>≈π²ℏ²/(2m*w²)</li>
+            <li>T(E)≈Γ²/[(E-E<sub>r</sub>)²+Γ²]</li>
+            <li>共振峰后出现负微分电阻区，是 RTD 的关键器件特征。</li>
+          </ul>
+        </div>
+        <div class="card linked-card">
+          <h2><span>◎</span>多重表征联动</h2>
+          <p class="linked-help">悬停或点击符号，同步定位双势垒、量子阱、共振能级和 I-V 曲线。</p>
+          <div class="symbol-row">
+            <button class="symbol-chip" data-symbol="barrierHeight">Vb</button>
+            <button class="symbol-chip" data-symbol="barrierWidth">b</button>
+            <button class="symbol-chip" data-symbol="wellWidth">w</button>
+            <button class="symbol-chip" data-symbol="bias">V</button>
+            <button class="symbol-chip" data-symbol="e1">E₁</button>
+            <button class="symbol-chip" data-symbol="current">I</button>
+          </div>
+          <div class="formula-box">
+            <div><span class="formula-symbol" data-symbol="e1">E₁</span>≈π²ℏ²/(2m*<span class="formula-symbol" data-symbol="wellWidth">w</span>²)</div>
+            <div>T(E)≈Γ²/[(E-Er)²+Γ²]，Γ 受 <span class="formula-symbol" data-symbol="barrierWidth">b</span> 和 <span class="formula-symbol" data-symbol="barrierHeight">Vb</span> 影响</div>
+            <div><span class="formula-symbol" data-symbol="current">I</span> 随 <span class="formula-symbol" data-symbol="bias">V</span> 改变出现共振峰与负微分电阻</div>
+          </div>
+          <div id="rtdLinkedInfo" class="linked-info">
+            <strong>选择一个符号</strong>
+            <p>把鼠标移到参数、公式或符号按钮上，查看它在图像、公式、参数和解释中的对应关系。</p>
+          </div>
+        </div>
+      </aside>
+      <section class="plot-panel module-visual-stack">
+        <canvas id="rtdCanvas" width="1040" height="720"></canvas>
+        <div id="rtdSummary" class="summary-box"></div>
+        <div id="aiPanel-rtd" class="ai-panel card" data-ai-module="rtd"></div>
+      </section>
+    </section>
+  </main>
+
+  <div id="announcer" class="announcer hidden">
+    <img src="./assets/robot_host_original.png" alt="报屏机器人">
+    <div>
+      <strong id="announcerTitle"></strong>
+      <p id="announcerText"></p>
+    </div>
+  </div>
+
+  <div id="authModal" class="auth-modal hidden" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="auth-dialog">
+      <button class="auth-close" type="button" data-auth-action="close" aria-label="关闭">×</button>
+      <h2 id="authTitle">登录后解锁完整平台</h2>
+      <p class="auth-note">未注册或未登录时，平台只开放首页和一维量子隧穿页面。</p>
+      <div class="auth-tabs">
+        <button class="active" type="button" data-auth-mode="login">登录</button>
+        <button type="button" data-auth-mode="register">注册</button>
+      </div>
+      <label class="auth-field">
+        <span>用户名</span>
+        <input id="authUsername" autocomplete="username" maxlength="32">
+      </label>
+      <label class="auth-field">
+        <span>密码</span>
+        <input id="authPassword" type="password" autocomplete="current-password" maxlength="72">
+      </label>
+      <div id="authMessage" class="auth-message"></div>
+      <button class="primary-btn auth-submit" type="button" data-auth-action="submit">提交</button>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
