@@ -16,10 +16,10 @@
     <nav>
       <button class="nav-link active" data-page="home">首页</button>
       <button class="nav-link" data-page="oneD">一维模型</button>
-      <button class="nav-link" data-page="stm">STM 应用</button>
       <button class="nav-link" data-page="alpha">α 衰变</button>
+      <button class="nav-link" data-page="stm">STM 应用</button>
       <button class="nav-link" data-page="flash">闪存隧穿</button>
-      <button class="nav-link" data-page="rtd">RTD</button>
+      <button class="nav-link" data-page="rtd">共振隧穿</button>
     </nav>
     <div class="auth-bar">
       <span id="authStatus">未登录：仅开放一维模型</span>
@@ -43,7 +43,7 @@
             </h1>
             <p class="learnly-lead">通过任务驱动的渐进式探究，把量子隧穿从抽象概念转化为可预测、可观察、可解释的学习路径。</p>
             <div class="learnly-search">
-              <input id="homeQuickInput" type="text" placeholder="输入 oneD / STM / alpha / flash / RTD 快速进入">
+              <input id="homeQuickInput" type="text" placeholder="输入 oneD / alpha / STM / flash / 共振隧穿 快速进入">
               <button type="button" data-action="home-search">进入</button>
             </div>
             <div class="learnly-progress">
@@ -72,20 +72,6 @@
                 <button class="learnly-card-go" data-page="oneD">进入</button>
               </div>
             </article>
-            <article class="learnly-card module-card" data-page="stm">
-              <div class="learnly-card-bg stm-bg"></div>
-              <div class="learnly-card-visual visual-stm" aria-hidden="true">
-                <canvas class="card-scene" data-scene="stm" width="320" height="300"></canvas>
-              </div>
-              <div class="learnly-card-side"><span>STM 应用</span></div>
-              <div class="learnly-card-content">
-                <div>
-                  <h2>STM<br>应用</h2>
-                  <p>距离变化与指数电流</p>
-                </div>
-                <button class="learnly-card-go" data-page="stm">进入</button>
-              </div>
-            </article>
             <article class="learnly-card module-card" data-page="alpha">
               <div class="learnly-card-bg alpha-bg"></div>
               <div class="learnly-card-visual visual-alpha" aria-hidden="true">
@@ -98,6 +84,20 @@
                   <p>库仑势垒与穿透趋势</p>
                 </div>
                 <button class="learnly-card-go" data-page="alpha">进入</button>
+              </div>
+            </article>
+            <article class="learnly-card module-card" data-page="stm">
+              <div class="learnly-card-bg stm-bg"></div>
+              <div class="learnly-card-visual visual-stm" aria-hidden="true">
+                <canvas class="card-scene" data-scene="stm" width="320" height="300"></canvas>
+              </div>
+              <div class="learnly-card-side"><span>STM 应用</span></div>
+              <div class="learnly-card-content">
+                <div>
+                  <h2>STM<br>应用</h2>
+                  <p>距离变化与指数电流</p>
+                </div>
+                <button class="learnly-card-go" data-page="stm">进入</button>
               </div>
             </article>
             <article class="learnly-card module-card" data-page="flash">
@@ -119,10 +119,10 @@
               <div class="learnly-card-visual visual-rtd" aria-hidden="true">
                 <canvas class="card-scene" data-scene="rtd" width="320" height="300"></canvas>
               </div>
-              <div class="learnly-card-side"><span>RTD 器件</span></div>
+              <div class="learnly-card-side"><span>共振隧穿器件</span></div>
               <div class="learnly-card-content">
                 <div>
-                  <h2>RTD<br>器件</h2>
+                  <h2>共振隧穿<br>器件</h2>
                   <p>共振透射与负微分电阻</p>
                 </div>
                 <button class="learnly-card-go" data-page="rtd">进入</button>
@@ -170,6 +170,7 @@
         <div class="tabs">
           <button class="tab active" data-plot="oneD2d">势垒与波函数实部</button>
           <button class="tab" data-plot="oneD3d">三维立体动图</button>
+          <button class="tab" data-plot="oneDTR">透射/反射率曲线</button>
         </div>
         <canvas id="oneDCanvas" width="960" height="720"></canvas>
       </section>
@@ -192,6 +193,7 @@
             <button class="symbol-chip" data-symbol="m">m</button>
             <button class="symbol-chip" data-symbol="kappa">κ</button>
             <button class="symbol-chip" data-symbol="T">T</button>
+            <button class="symbol-chip" data-symbol="R">R</button>
           </div>
           <div class="formula-box" id="oneDFormulaBox">
             <div>
@@ -201,13 +203,16 @@
               / 4<span class="formula-symbol" data-symbol="E">E</span>(<span class="formula-symbol" data-symbol="V0">V₀</span>-<span class="formula-symbol" data-symbol="E">E</span>)]
             </div>
             <div>
+              <span class="formula-symbol" data-symbol="R">R</span> = 1 − <span class="formula-symbol" data-symbol="T">T</span>
+            </div>
+            <div>
               <span class="formula-symbol" data-symbol="kappa">κ</span> =
               √[2<span class="formula-symbol" data-symbol="m">m</span>(<span class="formula-symbol" data-symbol="V0">V₀</span>-<span class="formula-symbol" data-symbol="E">E</span>)]
             </div>
           </div>
           <div id="oneDLinkedInfo" class="linked-info">
             <strong>选择一个符号</strong>
-            <p>把鼠标移到 V₀、a、E、m、κ 或 T 上，查看它在图像、公式和参数表中的对应关系。</p>
+            <p>把鼠标移到 V₀、a、E、m、κ、T 或 R 上，查看它在图像、公式和参数表中的对应关系。</p>
           </div>
         </div>
         <div id="learningPanel-oneD" class="learning-panel" data-module="oneD"></div>
@@ -235,6 +240,7 @@
           <ul>
             <li>库仑势：V(r)=1.44 Z<sub>d</sub>Z<sub>α</sub>/r</li>
             <li>外转折点：r<sub>2</sub>=1.44 Z<sub>d</sub>Z<sub>α</sub>/E<sub>α</sub></li>
+            <li>WKB 衰减：u<sub>2</sub>(r)∝[κ(R)κ(r)]<sup>-1/2</sup>exp[-∫<sub>R</sub><sup>r</sup>κ(r')dr']</li>
             <li>势垒越高、越宽，隧穿概率越低。</li>
           </ul>
         </div>
@@ -294,7 +300,7 @@
         </div>
       </aside>
       <section class="plot-panel module-visual-stack">
-        <canvas id="stmCanvas" width="1040" height="720"></canvas>
+        <canvas id="stmCanvas" width="1040" height="980"></canvas>
       </section>
       <aside class="panel-stack result-stack module-insight-stack">
         <div id="stmSummary" class="summary-box"></div>
@@ -381,11 +387,11 @@
           <p>共振隧穿二极管由双势垒量子阱构成。当入射电子能量与阱内准束缚能级对准时，透射率出现尖峰；偏压继续增大后对准被破坏，电流下降。</p>
         </div>
         <div class="card">
-          <h2><span>☰</span>RTD 参数</h2>
+          <h2><span>☰</span>共振隧穿参数</h2>
           <div id="rtdControls"></div>
           <div class="action-row">
-            <button class="primary-btn" data-action="update-rtd">更新 RTD 图</button>
-            <button class="outline-btn small" data-action="reset-rtd">恢复 RTD 参数</button>
+            <button class="primary-btn" data-action="update-rtd">更新共振隧穿图</button>
+            <button class="outline-btn small" data-action="reset-rtd">恢复共振隧穿参数</button>
             <button class="outline-btn small" data-action="save-rtd">保存当前图</button>
           </div>
         </div>
@@ -394,7 +400,7 @@
           <ul>
             <li>E<sub>1</sub>≈π²ℏ²/(2m*w²)</li>
             <li>T(E)≈Γ²/[(E-E<sub>r</sub>)²+Γ²]</li>
-            <li>共振峰后出现负微分电阻区，是 RTD 的关键器件特征。</li>
+            <li>共振峰后出现负微分电阻区，是共振隧穿二极管的关键器件特征。</li>
           </ul>
         </div>
         <div class="card linked-card">

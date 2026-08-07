@@ -87,8 +87,14 @@ const oneDSymbolInfo = {
   T: {
     label: "T",
     name: "透射率 T",
-    region: "势垒右侧的透射波区域和计算结果中的 T。",
+    region: "势垒右侧的透射波区域、T(E) 曲线，以及计算结果中的 T。",
     explain: "T 表示粒子穿过势垒的概率。T 越大，右侧透射波振幅越明显。"
+  },
+  R: {
+    label: "R",
+    name: "反射率 R",
+    region: "R(E) 曲线和计算结果中的 R。",
+    explain: "R=1−T，表示粒子被势垒反射回去的概率。无吸收势垒时透射与反射概率守恒。"
   }
 };
 
@@ -203,8 +209,8 @@ const linkedSymbolInfo = {
     },
     current: {
       name: "相对电流 I",
-      region: "RTD I-V 曲线上的红色工作点。",
-      explain: "电流随偏压先升后降的区域体现负微分电阻，是 RTD 的核心器件特征。"
+      region: "共振隧穿二极管 I-V 曲线上的红色工作点。",
+      explain: "电流随偏压先升后降的区域体现负微分电阻，是共振隧穿二极管的核心器件特征。"
     }
   }
 };
@@ -371,7 +377,7 @@ function progressStorageKey() {
 }
 function coreProgressCount() {
   if (isAdmin()) return 3;
-  return ["oneD", "stm", "alpha"].filter(module => state.learningProgress[module]).length;
+  return ["oneD", "alpha", "stm"].filter(module => state.learningProgress[module]).length;
 }
 function extensionsUnlocked() {
   if (isAdmin()) return true;
@@ -389,7 +395,7 @@ function mergeGuestProgressIntoUser() {
   if (!state.authUser) return;
   try {
     const guestProgress = { ...defaultLearningProgress(), ...JSON.parse(localStorage.getItem("qt_learning_progress_guest") || "{}") };
-    ["oneD", "stm", "alpha"].forEach(module => {
+    ["oneD", "alpha", "stm"].forEach(module => {
       state.learningProgress[module] = Boolean(state.learningProgress[module] || guestProgress[module]);
     });
     updateUnlockState();
@@ -416,7 +422,7 @@ function pageLockReason(page) {
   if (!pages[page]) return "";
   if (!isAuthenticated() && !guestPages.has(page)) return "登录或注册后才能使用该模块。";
   if (extensionPages.has(page) && !extensionsUnlocked()) {
-    return "闪存隧穿和 RTD 暂未解锁。请先完成一维方势垒、STM 应用、α 衰变应用的核心任务。";
+    return "闪存隧穿和共振隧穿暂未解锁。请先完成一维方势垒、α 衰变、STM 应用的核心任务。";
   }
   return "";
 }
@@ -582,33 +588,38 @@ function moduleDisplayName(module) {
     stm: "STM 应用",
     alpha: "α 衰变",
     flash: "闪存隧穿",
-    rtd: "RTD"
+    rtd: "共振隧穿"
   }[module] || module;
 }
 
 const aiModuleContext = {
   oneD: {
+    name: "势垒透射助教",
     role: "一维方势垒量子隧穿教学助教",
     focus: "解释势垒高度 V0、宽度 a、粒子能量 E、质量 m、透射率 T、波函数衰减与三维波动图。",
     formulas: "E<V0 时 κ=√[2m(V0-E)]，势垒区波函数指数衰减，T 与 κa 强相关。"
   },
   stm: {
+    name: "STM 探针助教",
     role: "扫描隧道显微镜 STM 教学助教",
     focus: "解释探针距离 d、功函数 φ、偏置电压 Vb、衰减系数 κ 与相对隧穿电流 Irel。",
     formulas: "κ≈0.512√φ，ψ(d)∝exp(-κd)，Irel∝Vb·exp(-2κd)。"
   },
   alpha: {
+    name: "α 衰变隧穿助教",
     role: "α 衰变量子隧穿教学助教",
     focus: "解释库仑势垒、核半径 R、外转折点 r2、α 粒子能量 Eα 与穿透概率。",
     formulas: "V(r)=1.44ZdZα/r，r2=1.44ZdZα/Eα，禁阻区宽度约为 r2-R。"
   },
   flash: {
+    name: "闪存隧穿助教",
     role: "闪存隧穿器件教学助教",
     focus: "解释控制栅电压、隧穿氧化层厚度、势垒高度、氧化层电场与 Fowler-Nordheim 电流。",
     formulas: "Eox≈Veff/tox，JFN∝Eox²exp[-BφB^(3/2)/Eox]。"
   },
   rtd: {
-    role: "共振隧穿二极管 RTD 教学助教",
+    name: "共振隧穿助教",
+    role: "共振隧穿二极管教学助教",
     focus: "解释双势垒量子阱、阱宽、势垒宽度、共振能级、I-V 曲线和负微分电阻。",
     formulas: "E1≈π²ℏ²/(2m*w²)，T(E) 近似 Lorentz 共振峰，偏压改变能级对准。"
   }
@@ -621,7 +632,7 @@ const aiQuickPrompts = [
 ];
 
 function progressOverviewHtml() {
-  const coreModules = ["oneD", "stm", "alpha"];
+  const coreModules = ["oneD", "alpha", "stm"];
   const rows = coreModules.map(module => {
     const done = isAdmin() || state.learningProgress[module];
     return `<span class="progress-pill ${done ? "done" : ""}">${moduleDisplayName(module)} ${done ? "✓" : "-"}</span>`;
@@ -630,7 +641,7 @@ function progressOverviewHtml() {
     <div class="unlock-progress">
       <strong>拓展应用解锁进度：${coreProgressCount()}/3</strong>
       <div class="progress-pills">${rows}</div>
-      <p>${extensionsUnlocked() ? "已解锁：闪存隧穿、RTD。" : "完成三个核心任务后解锁：闪存隧穿、RTD。"}</p>
+      <p>${extensionsUnlocked() ? "已解锁：闪存隧穿、共振隧穿。" : "完成三个核心任务后解锁：闪存隧穿、共振隧穿。"}</p>
     </div>
   `;
 }
@@ -647,11 +658,11 @@ function renderHomeProgress() {
   stateEl.textContent = isAdmin()
     ? "管理员账号：已直接解锁全部模块。"
     : extensionsUnlocked()
-    ? "拓展应用已解锁，可以进入闪存隧穿和 RTD。"
+    ? "拓展应用已解锁，可以进入闪存隧穿和共振隧穿。"
     : isAuthenticated()
       ? "完成三个核心任务后解锁拓展应用。"
-      : "登录后开放 STM、α 衰变与拓展解锁路径。";
-  listEl.innerHTML = ["oneD", "stm", "alpha"].map(module => {
+      : "登录后开放 α 衰变、STM 应用与拓展解锁路径。";
+  listEl.innerHTML = ["oneD", "alpha", "stm"].map(module => {
     const done = isAdmin() || state.learningProgress[module];
     return `<div class="home-progress-item ${done ? "done" : ""}"><span>${moduleDisplayName(module)}</span><span>${isAdmin() ? "管理员解锁" : done ? "已完成" : "待完成"}</span></div>`;
   }).join("");
@@ -776,7 +787,7 @@ function submitTaskExplanation() {
   state.taskStep = "done";
   const completed = completeCoreTaskIfReady();
   state.taskFeedback = completed
-    ? `${moduleDisplayName(state.activeTaskModule)}核心任务已完成。当前核心进度 ${coreProgressCount()}/3${extensionsUnlocked() ? "，已解锁闪存隧穿和 RTD。" : "。"}`
+    ? `${moduleDisplayName(state.activeTaskModule)}核心任务已完成。当前核心进度 ${coreProgressCount()}/3${extensionsUnlocked() ? "，已解锁闪存隧穿和共振隧穿。" : "。"}`
     : "解释已提交。可以对照参考解释修正表述。";
   renderLearningPanels();
 }
@@ -985,7 +996,7 @@ function renderLearningPanel(module) {
 }
 
 function renderLearningPanels() {
-  ["oneD", "stm", "alpha"].forEach(renderLearningPanel);
+  ["oneD", "alpha", "stm"].forEach(renderLearningPanel);
 }
 
 function moduleSummaryText(module) {
@@ -1042,9 +1053,10 @@ function defaultAiQuestion(module, type) {
 
 function aiMessagesFor(module) {
   if (!state.ai.messages[module]) {
+    const assistantName = aiModuleContext[module]?.name || "量子隧穿助教";
     state.ai.messages[module] = [{
       role: "assistant",
-      text: "你好，我会结合当前页面参数、仿真结果和学习任务来解释。可以点快捷问题，也可以直接提问。"
+      text: `你好，我是${assistantName}。我会结合当前页面参数、仿真结果和学习任务来解释。可以点快捷问题，也可以直接提问。`
     }];
   }
   return state.ai.messages[module];
@@ -1054,6 +1066,7 @@ function renderAIPanel(module) {
   const panel = document.getElementById(`aiPanel-${module}`);
   if (!panel) return;
   const isLoading = state.ai.loadingModule === module;
+  const assistantName = aiModuleContext[module]?.name || "量子隧穿助教";
   const messages = aiMessagesFor(module).slice(-4);
   const quickButtons = aiQuickPrompts.map(([type, label]) =>
     `<button class="ai-chip" data-ai-action="quick" data-ai-module="${module}" data-ai-type="${type}" ${isLoading ? "disabled" : ""}>${label}</button>`
@@ -1062,10 +1075,10 @@ function renderAIPanel(module) {
     `<div class="ai-message ${item.role === "user" ? "user" : "assistant"}">${escapeHtml(item.text)}</div>`
   ).join("");
   panel.innerHTML = `
-    <h2><span>AI</span>Dify 智能助教</h2>
+    <h2><span>AI</span>${assistantName}</h2>
     <p class="ai-note">${moduleDisplayName(module)} · 自动读取当前参数、结果和任务状态</p>
     <div class="ai-quick">${quickButtons}</div>
-    <div class="ai-thread">${body}${isLoading ? `<div class="ai-message assistant loading">正在向 Dify 助教提问...</div>` : ""}</div>
+    <div class="ai-thread">${body}${isLoading ? `<div class="ai-message assistant loading">正在向${assistantName}提问...</div>` : ""}</div>
     <div class="ai-input-row">
       <textarea id="aiInput-${module}" class="ai-input" placeholder="向 AI 询问当前图像、参数变化或任务解释"></textarea>
       <button class="ai-send" data-ai-action="send" data-ai-module="${module}" ${isLoading ? "disabled" : ""}>发送</button>
@@ -1075,7 +1088,7 @@ function renderAIPanel(module) {
 }
 
 function renderAIPanels() {
-  ["oneD", "stm", "alpha", "flash", "rtd"].forEach(renderAIPanel);
+  ["oneD", "alpha", "stm", "flash", "rtd"].forEach(renderAIPanel);
 }
 
 function normalizeDifyAnswer(data) {
@@ -1178,6 +1191,7 @@ function homeQuickSearch() {
     "闪存": "flash",
     "rtd": "rtd",
     "共振": "rtd",
+    "共振隧穿": "rtd",
     "二极管": "rtd"
   };
   const page = aliases[raw] || (raw.includes("stm") ? "stm" : raw.includes("rtd") ? "rtd" : raw.includes("flash") || raw.includes("闪存") ? "flash" : raw.includes("alpha") || raw.includes("衰变") ? "alpha" : raw.includes("一维") ? "oneD" : "oneD");
@@ -1186,12 +1200,12 @@ function homeQuickSearch() {
 
 function announcementFor(page) {
   const text = {
-    home: ["欢迎回到主页面", "当前可选择一维模型、STM、α 衰变、闪存隧穿和共振隧穿二极管 RTD。"],
+    home: ["欢迎回到主页面", "当前可选择一维模型、α 衰变、STM、闪存隧穿和共振隧穿二极管。"],
     oneD: ["欢迎来到一维量子隧穿页面", "可调参数包括势垒高度、势垒宽度、粒子质量、粒子能量和绘图范围。"],
     alpha: ["欢迎来到 α 粒子发射页面", "可观察库仑势垒、外转折点和 α 粒子波函数的隧穿衰减。"],
     stm: ["欢迎来到扫描隧道显微镜 STM 页面", "可调参数包括探针距离、材料功函数和偏置电压。"],
     flash: ["欢迎来到闪存隧穿页面", "可观察栅压、氧化层厚度和势垒高度对 Fowler-Nordheim 隧穿电流的影响。"],
-    rtd: ["欢迎来到共振隧穿二极管 RTD 页面", "可观察双势垒量子阱、共振透射峰和负微分电阻区。"]
+    rtd: ["欢迎来到共振隧穿二极管页面", "可观察双势垒量子阱、共振透射峰和负微分电阻区。"]
   };
   return text[page] || text.home;
 }
@@ -1314,7 +1328,8 @@ function linkedValueText(module, symbol, values) {
       E: v => `当前值：E = ${v.E.toFixed(2)} a.u.`,
       m: v => `当前值：m = ${v.m.toFixed(2)} a.u.`,
       kappa: v => `当前值：κ = ${(v.kappa ?? 0).toFixed(4)}`,
-      T: v => `当前值：T = ${v.T.toExponential(3)}`
+      T: v => `当前值：T = ${v.T.toExponential(3)}`,
+      R: v => `当前值：R = ${(1 - v.T).toExponential(3)}`
     },
     stm: {
       d: v => `当前值：d = ${v.d.toFixed(1)} Å`,
@@ -1510,6 +1525,88 @@ function transmission(E, V0, a, m) {
   return [1 / denom, k, 0];
 }
 
+function cAdd(a, b) { return [a[0] + b[0], a[1] + b[1]]; }
+function cSub(a, b) { return [a[0] - b[0], a[1] - b[1]]; }
+function cMul(a, b) { return [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]]; }
+function cScale(s, a) { return [s * a[0], s * a[1]]; }
+function cDiv(a, b) {
+  const d = b[0] * b[0] + b[1] * b[1] || 1e-30;
+  return [(a[0] * b[0] + a[1] * b[1]) / d, (a[1] * b[0] - a[0] * b[1]) / d];
+}
+function cExpI(theta) { return [Math.cos(theta), Math.sin(theta)]; }
+function cAbs2(a) { return a[0] * a[0] + a[1] * a[1]; }
+
+function rectangularBarrierCoeffs(E, V0, a, m) {
+  // ħ = 1。E < V0 时采用矩形势垒精确匹配解（入射振幅 A = 1）：
+  // ψ_I = e^{ikx} + B e^{-ikx}
+  // ψ_II = C e^{κx} + D e^{-κx}
+  // ψ_III = F e^{ikx}
+  // Δ = cosh(κa) + i (κ²-k²)/(2kκ) sinh(κa)
+  const k = Math.sqrt(2 * m * Math.max(E, 1e-12));
+  if (E < V0 - 1e-10) {
+    const kappa = Math.sqrt(2 * m * (V0 - E));
+    const ka = Math.min(kappa * a, 40);
+    const sh = Math.sinh(ka);
+    const ch = Math.cosh(ka);
+    const delta = [ch, ((kappa * kappa - k * k) / (2 * k * kappa)) * sh];
+    const F = cDiv(cExpI(-k * a), delta);
+    const B = cDiv([0, -((k * k + kappa * kappa) / (2 * k * kappa)) * sh], delta);
+    const C = cScale(0.5, cDiv(cMul([1, k / kappa], [Math.exp(-ka), 0]), delta));
+    const D = cScale(0.5, cDiv(cMul([1, -k / kappa], [Math.exp(ka), 0]), delta));
+    return { regime: "tunnel", k, kappa, q: 0, A: [1, 0], B, C, D, F, delta };
+  }
+  if (E > V0 + 1e-10) {
+    const q = Math.sqrt(2 * m * (E - V0));
+    const gamma = [k / Math.max(q, 1e-12), 0];
+    const one = [1, 0];
+    const rho = cMul(cExpI(2 * q * a), cDiv(cSub(one, gamma), cAdd(one, gamma)));
+    const num = cSub(cMul(rho, cAdd(one, gamma)), cSub(one, gamma));
+    const den = cSub(cAdd(one, gamma), cMul(rho, cSub(one, gamma)));
+    const B = cDiv(num, den);
+    const C = cScale(0.5, cAdd(cAdd(one, B), cMul(gamma, cSub(one, B))));
+    const D = cScale(0.5, cSub(cAdd(one, B), cMul(gamma, cSub(one, B))));
+    const F = cMul(cAdd(cMul(C, cExpI(q * a)), cMul(D, cExpI(-q * a))), cExpI(-k * a));
+    return { regime: "over", k, kappa: 0, q, A: [1, 0], B, C, D, F };
+  }
+  const one = [1, 0];
+  const ika = [0, k * a];
+  const den = cSub([2, 0], ika);
+  const C = cDiv(cScale(2, cSub(one, ika)), den);
+  const D = cDiv(cMul([0, k], C), cSub(one, ika));
+  const B = cSub(C, one);
+  const F = cMul(cAdd(C, cScale(a, D)), cExpI(-k * a));
+  return { regime: "equal", k, kappa: 0, q: 0, A: [1, 0], B, C, D, F };
+}
+
+function evalBarrierPsi(x, a, coeffs) {
+  const { k, kappa, q, B, C, D, F, regime } = coeffs;
+  if (x < 0) {
+    return cAdd(cExpI(k * x), cMul(B, cExpI(-k * x)));
+  }
+  if (x <= a) {
+    if (regime === "tunnel") {
+      // 稳定写法：ψ_II(x) = F e^{ika} [cosh(κ(a-x)) - (ik/κ) sinh(κ(a-x))]
+      // 与 C e^{κx}+D e^{-κx} 等价，避免 κa 较大时系数溢出。
+      const u = Math.min(kappa * (a - x), 40);
+      const bracket = [Math.cosh(u), -(k / kappa) * Math.sinh(u)];
+      return cMul(cMul(F, cExpI(k * a)), bracket);
+    }
+    if (regime === "over") {
+      return cAdd(cMul(C, cExpI(q * x)), cMul(D, cExpI(-q * x)));
+    }
+    return cAdd(C, cScale(x, D));
+  }
+  return cMul(F, cExpI(k * x));
+}
+
+function psiRealPart(psi, phase) {
+  return psi[0] * Math.cos(phase) + psi[1] * Math.sin(phase);
+}
+
+function psiImagPart(psi, phase) {
+  return psi[1] * Math.cos(phase) - psi[0] * Math.sin(phase);
+}
+
 function drawOneD() {
   const p = state.oneD;
   if (p.xmax <= p.xmin) p.xmax = p.xmin + 1;
@@ -1520,7 +1617,7 @@ function drawOneD() {
 
   $("#oneDResults").innerHTML = [
     ["透射率 T", T.toExponential(6), "T"],
-    ["反射率 R", (1 - T).toExponential(6), ""],
+    ["反射率 R", (1 - T).toExponential(6), "R"],
     ["波数 k", k.toFixed(6), "m"],
     ["衰减系数 κ", (p.E < p.V0 ? kappa : 0).toFixed(6), "kappa"],
     ["T + R", "1.000000", "T"]
@@ -1531,6 +1628,7 @@ function drawOneD() {
     : "当前 E ≥ V₀，粒子可以越过势垒；透射率仍会因为波的相干叠加出现振荡。";
 
   if (state.plotMode === "oneD3d") return drawOneD3D(ctx, p, T, k, kappa);
+  if (state.plotMode === "oneDTR") return drawOneDTR(ctx, p, T);
 
   const top = { x: 96, y: 72, w: 790, h: 245 };
   const bottom = { x: 96, y: 432, w: 790, h: 235 };
@@ -1579,20 +1677,10 @@ function drawOneD() {
   plotFrame(ctx, bottom.x, bottom.y, bottom.w, bottom.h, "波函数实部示意", "位置 x", "Re[ψ(x)]");
   drawGrid(ctx, bottom.x, bottom.y, bottom.w, bottom.h);
   const xMapBottom = v => mapX(v, p.xmin, p.xmax, bottom.x, bottom.w);
-  const ampR = Math.sqrt(Math.max(1 - T, 0));
-  const ampT = Math.sqrt(Math.max(T, 1e-8));
   const phase = state.heroPhase * TAU;
-  const psiValues = xs.map((xv) => {
-    if (xv < 0) return Math.cos(k * xv - phase) + ampR * Math.cos(-k * xv - phase);
-    if (xv <= p.a) {
-      return p.E < p.V0
-        ? (1 + ampR) * Math.exp(-kappa * xv) * Math.cos(phase)
-        : 0.8 * Math.cos(Math.sqrt(2 * p.m * (p.E - p.V0)) * xv - phase);
-    }
-    return ampT * Math.cos(k * (xv - p.a) - phase);
-  });
-  const theoreticalLimit = Math.max(1.05, 1 + ampR, ampT);
-  const observedLimit = Math.max(...psiValues.map(v => Math.abs(v)), theoreticalLimit);
+  const coeffs = rectangularBarrierCoeffs(p.E, p.V0, p.a, p.m);
+  const psiValues = xs.map(xv => psiRealPart(evalBarrierPsi(xv, p.a, coeffs), phase));
+  const observedLimit = Math.max(...psiValues.map(v => Math.abs(v)), 1.05);
   const yLimit = observedLimit < 3 ? Math.ceil(observedLimit * 12) / 10 : Math.ceil(observedLimit * 1.12);
   const yMapBottom = v => mapY(v, -yLimit, yLimit, bottom.y, bottom.h);
   const bx1 = clamp(xMapBottom(0), bottom.x, bottom.x + bottom.w);
@@ -1629,11 +1717,104 @@ function drawOneD() {
   ctx.restore();
 }
 
+function drawOneDTR(ctx, p, Tnow) {
+  const area = { x: 96, y: 80, w: 790, h: 520 };
+  const eMax = Math.max(p.V0 * 2, p.E * 1.2, 1);
+  const eMin = 1e-4;
+  const n = 500;
+  const energies = linspace(eMin, eMax, n);
+  const Ts = energies.map(E => transmission(E, p.V0, p.a, p.m)[0]);
+  const Rs = Ts.map(T => 1 - T);
+  const focus = activeOneDSymbol();
+  const xMap = v => mapX(v, 0, eMax, area.x, area.w);
+  const yMap = v => mapY(v, 0, 1, area.y, area.h);
+
+  plotFrame(ctx, area.x, area.y, area.w, area.h, "透射率 T(E) 与反射率 R(E)", "能量 E", "概率");
+  drawGrid(ctx, area.x, area.y, area.w, area.h);
+  drawAxisLabels(ctx, area.x, area.y, area.w, area.h,
+    [[0, "0"], [p.V0, `V₀=${p.V0.toFixed(1)}`], [p.E, `E=${p.E.toFixed(1)}`], [eMax, eMax.toFixed(1)]],
+    [[0, "0"], [0.5, "0.5"], [1, "1"]],
+    xMap, yMap
+  );
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(area.x, area.y, area.w, area.h);
+  ctx.clip();
+
+  const drawCurve = (ys, color, width) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    energies.forEach((E, i) => {
+      const px = xMap(E);
+      const py = yMap(clamp(ys[i], 0, 1));
+      i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+    });
+    ctx.stroke();
+  };
+
+  const tWidth = focus === "T" ? 5.5 : 3.5;
+  const rWidth = focus === "R" ? 5.5 : 3.5;
+  drawCurve(Ts, "#2563eb", tWidth);
+  drawCurve(Rs, "#f97316", rWidth);
+
+  const xV0 = xMap(p.V0);
+  ctx.strokeStyle = focus === "V0" ? "#f59e0b" : "#94a3b8";
+  ctx.lineWidth = focus === "V0" ? 4 : 2;
+  ctx.setLineDash([8, 6]);
+  ctx.beginPath();
+  ctx.moveTo(xV0, area.y);
+  ctx.lineTo(xV0, area.y + area.h);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  const xE = xMap(clamp(p.E, 0, eMax));
+  const yT = yMap(clamp(Tnow, 0, 1));
+  const yR = yMap(clamp(1 - Tnow, 0, 1));
+  ctx.strokeStyle = focus === "E" ? "#f59e0b" : "#dc2626";
+  ctx.lineWidth = focus === "E" ? 4 : 2.5;
+  ctx.setLineDash([6, 5]);
+  ctx.beginPath();
+  ctx.moveTo(xE, area.y);
+  ctx.lineTo(xE, area.y + area.h);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  const drawPoint = (x, y, color) => {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  };
+  drawPoint(xE, yT, "#2563eb");
+  drawPoint(xE, yR, "#f97316");
+  ctx.restore();
+
+  drawLegend(ctx, [
+    ["透射率 T(E)", "#2563eb", false],
+    ["反射率 R(E)", "#f97316", false],
+    ["当前能量 E", "#dc2626", true],
+    ["势垒高度 V₀", "#94a3b8", true]
+  ], area.x + area.w - 170, area.y + 18);
+
+  ctx.save();
+  ctx.fillStyle = "#334155";
+  ctx.font = "13px Microsoft YaHei UI";
+  ctx.textAlign = "left";
+  ctx.fillText(`当前：T=${Tnow.toExponential(3)}, R=${(1 - Tnow).toExponential(3)}（V₀=${p.V0.toFixed(2)}, a=${p.a.toFixed(2)}, m=${p.m.toFixed(2)}）`, area.x, area.y + area.h + 58);
+  ctx.restore();
+}
+
 function drawOneD3D(ctx, p, T, k, kappa) {
   const area = { x: 70, y: 70, w: 840, h: 600 };
   const phase = state.heroPhase * 8;
-  const ampT = Math.sqrt(Math.max(T, 1e-10));
-  const ampR = Math.sqrt(Math.max(1 - T, 0));
+  const coeffs = rectangularBarrierCoeffs(p.E, p.V0, p.a, p.m);
+  const ampR = Math.sqrt(cAbs2(coeffs.B));
+  const ampT = Math.sqrt(cAbs2(coeffs.F));
   const focus = activeOneDSymbol();
   const xMin = -10;
   const xMax = Math.max(16, p.a + 16);
@@ -1736,22 +1917,21 @@ function drawOneD3D(ctx, p, T, k, kappa) {
   const left = linspace(xMin, 0, 420);
   const barrier = linspace(0, p.a, 180);
   const right = linspace(p.a, xMax, 420);
-  const incident = left.map(x => [x, Math.cos(k * x - phase), Math.sin(k * x - phase)]);
-  const reflected = left.map(x => [x, ampR * Math.cos(-k * x - phase), ampR * Math.sin(-k * x - phase)]);
-  const superposed = left.map(x => [
-    x,
-    Math.cos(k * x - phase) + ampR * Math.cos(-k * x - phase),
-    Math.sin(k * x - phase) + ampR * Math.sin(-k * x - phase)
-  ].map((v, i) => i === 0 ? v : v * 0.5));
-  const inside = barrier.map(x => {
-    if (p.E < p.V0) {
-      const amp = Math.exp(-kappa * x);
-      return [x, amp * Math.cos(-phase), amp * Math.sin(-phase)];
-    }
-    const q = Math.sqrt(2 * p.m * Math.max(p.E - p.V0, 1e-12));
-    return [x, 0.8 * Math.cos(q * x - phase), 0.8 * Math.sin(q * x - phase)];
+  const wavePoint = x => {
+    const psi = evalBarrierPsi(x, p.a, coeffs);
+    return [x, psiRealPart(psi, phase) * 0.5, psiImagPart(psi, phase) * 0.5];
+  };
+  const incident = left.map(x => {
+    const psi = cExpI(coeffs.k * x);
+    return [x, psiRealPart(psi, phase), psiImagPart(psi, phase)];
   });
-  const transmitted = right.map(x => [x, ampT * Math.cos(k * (x - p.a) - phase), ampT * Math.sin(k * (x - p.a) - phase)]);
+  const reflected = left.map(x => {
+    const psi = cMul(coeffs.B, cExpI(-coeffs.k * x));
+    return [x, psiRealPart(psi, phase), psiImagPart(psi, phase)];
+  });
+  const superposed = left.map(wavePoint);
+  const inside = barrier.map(wavePoint);
+  const transmitted = right.map(wavePoint);
 
   drawCurve(incident, "#1f77b4", focus === "E" ? 4.6 : 3.4);
   drawCurve(reflected, "#ff7f0e", 3.2);
@@ -1830,31 +2010,68 @@ function drawAlpha() {
   if (r2 > p.R && r2 < rMax) {
     ctx.strokeStyle = focus === "r2" ? "#f59e0b" : "#7c3aed"; ctx.lineWidth = focus === "r2" ? 5 : 2; ctx.setLineDash([4, 5]); ctx.beginPath(); ctx.moveTo(xMap(r2), area.y); ctx.lineTo(xMap(r2), area.y + area.h); ctx.stroke(); ctx.setLineDash([]);
   }
-  const waveAmp = Math.max(0.9, 0.13 * Math.max(p.Ealpha, 1));
+  // 波函数曲线按可视化比例绘制：强调核内振荡、势垒内衰减和势垒外出射波的连续关系。
+  const waveAmp = Math.max(1.8, 0.045 * (ymax - ymin));
   const rIn = linspace(0.2, p.R, 450);
   const kIn = 0.55 * Math.sqrt(Math.max(p.Ealpha - p.well, 1e-9));
-  ctx.strokeStyle = "#dc2626"; ctx.lineWidth = 3; ctx.beginPath();
+  const kOut = 0.55 * Math.sqrt(Math.max(p.Ealpha, 1e-9));
   const phase = state.heroPhase * TAU;
+  const kappaAt = r => Math.sqrt(Math.max(C * p.Zd * Za / Math.max(r, 1e-9) - p.Ealpha, 0));
+  const kappaR = Math.max(kappaAt(p.R), .18);
+  let barrierAction = 0;
+  const boundaryOffset = waveAmp * Math.sin(kIn * p.R - phase);
+  let barrierExitOffset = boundaryOffset;
+  ctx.strokeStyle = "#dc2626"; ctx.lineWidth = 3; ctx.beginPath();
   rIn.forEach((r, i) => {
     const psi = p.Ealpha + waveAmp * Math.sin(kIn * r - phase);
     i ? ctx.lineTo(xMap(r), yMap(psi)) : ctx.moveTo(xMap(r), yMap(psi));
   });
+  ctx.stroke();
+
   if (r2 > p.R) {
-    let action = 0;
-    const boundaryPhase = Math.sin(kIn * p.R - phase);
     const rBar = linspace(p.R, Math.min(r2, rMax), 520);
+    ctx.strokeStyle = "#f97316";
+    ctx.lineWidth = 3.2;
+    ctx.beginPath();
     rBar.forEach((r, i) => {
       if (i > 0) {
-        const V = C * p.Zd * Za / r;
-        action += 0.2 * Math.sqrt(Math.max(V - p.Ealpha, 0)) * (r - rBar[i - 1]);
+        barrierAction += 0.2 * kappaAt(r) * (r - rBar[i - 1]);
       }
-      ctx.lineTo(xMap(r), yMap(p.Ealpha + waveAmp * boundaryPhase * Math.exp(-action)));
+      // u₂(r) ∝ [κ(R)κ(r)]^(-1/2) exp[-∫κ(r')dr'] 的可视化形式。
+      const matching = Math.sqrt(kappaR / Math.max(kappaAt(r), .18));
+      const psiOffset = boundaryOffset * matching * Math.exp(-barrierAction);
+      if (i === rBar.length - 1) barrierExitOffset = psiOffset;
+      const psi = p.Ealpha + psiOffset;
+      i ? ctx.lineTo(xMap(r), yMap(psi)) : ctx.moveTo(xMap(r), yMap(psi));
     });
+    ctx.stroke();
   }
-  ctx.stroke();
+
+  const outgoingStart = Math.max(p.R, Math.min(r2, rMax));
+  if (outgoingStart < rMax) {
+    ctx.strokeStyle = "#dc2626";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    const rOut = linspace(outgoingStart, rMax, 420);
+    const outgoingTarget = Math.sign(barrierExitOffset || boundaryOffset || 1) * Math.max(Math.abs(barrierExitOffset), waveAmp * .46);
+    rOut.forEach((r, i) => {
+      // 从 u₂(r₂) 的末值连续过渡到视觉放大的出射波，避免在 r₂ 处出现断点。
+      const distance = r - outgoingStart;
+      const envelope = barrierExitOffset + (outgoingTarget - barrierExitOffset) * (1 - Math.exp(-distance / 2.2));
+      const psi = p.Ealpha + envelope * Math.cos(kOut * distance);
+      i ? ctx.lineTo(xMap(r), yMap(psi)) : ctx.moveTo(xMap(r), yMap(psi));
+    });
+    ctx.stroke();
+  }
+  drawLegend(ctx, [
+    ["库仑势垒", "#1d4ed8"],
+    ["α 粒子能量", "#dc2626", true],
+    ["核内 / 势垒外波函数", "#dc2626"],
+    ["WKB 势垒内衰减（放大）", "#f97316"]
+  ], area.x + area.w - 248, area.y + 28);
   const metrics = alphaMetrics();
   updateLinkedUI("alpha", metrics);
-  $("#alphaSummary").textContent = `库仑势垒在核表面约 ${barrierR.toFixed(2)} MeV；外转折点 r₂≈${r2.toFixed(2)} fm；禁阻区宽度约 ${Math.max(0, r2 - p.R).toFixed(2)} fm。`;
+  $("#alphaSummary").textContent = `库仑势垒在核表面约 ${barrierR.toFixed(2)} MeV；外转折点 r₂≈${r2.toFixed(2)} fm；禁阻区宽度约 ${Math.max(0, r2 - p.R).toFixed(2)} fm。势垒内波函数按 WKB 匹配形式衰减；图中振幅按视觉比例放大，用于展示核内振荡、势垒内衰减和势垒外出射的趋势。`;
 }
 
 function drawSTM() {
@@ -1863,7 +2080,9 @@ function drawSTM() {
   const phiEffAvg = Math.max(p.phi - .5 * p.bias, .05);
   const kappa = .512 * Math.sqrt(phiEffAvg);
   const focus = activeLinkedSymbol("stm");
-  const top = { x: 90, y: 78, w: 860, h: 235 }, bottom = { x: 90, y: 440, w: 860, h: 215 };
+  const top = { x: 90, y: 78, w: 860, h: 210 };
+  const transmissionPanel = { x: 90, y: 410, w: 860, h: 190 };
+  const currentPanel = { x: 90, y: 730, w: 860, h: 190 };
   plotFrame(ctx, top.x, top.y, top.w, top.h, "STM：探针-真空势垒-样品与电子波函数", "x / Å", "势能 / eV");
   drawGrid(ctx, top.x, top.y, top.w, top.h);
   const xmin = -2, xmax = p.d + 2, ymax = p.phi * 1.45;
@@ -1900,31 +2119,66 @@ function drawSTM() {
     i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
   });
   ctx.stroke();
-  plotFrame(ctx, bottom.x, bottom.y, bottom.w, bottom.h, "相对隧穿电流随探针-样品距离的指数衰减", "d / Å", "log₁₀(Irel)");
-  drawGrid(ctx, bottom.x, bottom.y, bottom.w, bottom.h);
-  const current = p.bias * Math.exp(-2 * kappa * p.d);
-  ctx.strokeStyle = "#2563eb"; ctx.lineWidth = 4; ctx.beginPath();
+  // The normalized transmission makes the exponential T(d) relation visible
+  // without losing the much smaller absolute current scale in the next panel.
+  plotFrame(ctx, transmissionPanel.x, transmissionPanel.y, transmissionPanel.w, transmissionPanel.h, "透射趋势 T(d) 的指数衰减", "d / Å", "T(d) / T(2 Å)");
+  drawGrid(ctx, transmissionPanel.x, transmissionPanel.y, transmissionPanel.w, transmissionPanel.h);
+  const transmissionAtDistance = d => Math.exp(-2 * kappa * (d - 2));
+  const transmissionNow = transmissionAtDistance(p.d);
+  ctx.strokeStyle = "#0f766e";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
   for (let i = 0; i < 400; i++) {
     const d = 2 + 8 * i / 399;
-    const I = Math.max(p.bias * Math.exp(-2 * kappa * d), 1e-10);
-    const px = mapX(d, 2, 10, bottom.x, bottom.w);
-    const py = mapY(Math.log10(I), -10, 0, bottom.y, bottom.h);
+    const px = mapX(d, 2, 10, transmissionPanel.x, transmissionPanel.w);
+    const py = mapY(transmissionAtDistance(d), 0, 1, transmissionPanel.y, transmissionPanel.h);
     i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
   }
   ctx.stroke();
   ctx.fillStyle = "#dc2626";
   ctx.beginPath();
-  ctx.arc(mapX(p.d, 2, 10, bottom.x, bottom.w), mapY(Math.log10(Math.max(current, 1e-10)), -10, 0, bottom.y, bottom.h), 6, 0, TAU);
+  ctx.arc(mapX(p.d, 2, 10, transmissionPanel.x, transmissionPanel.w), mapY(transmissionNow, 0, 1, transmissionPanel.y, transmissionPanel.h), 6, 0, TAU);
+  ctx.fill();
+  if (focus === "d" || focus === "kappa" || focus === "phi") {
+    ctx.strokeStyle = "#f59e0b";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(mapX(p.d, 2, 10, transmissionPanel.x, transmissionPanel.w), mapY(transmissionNow, 0, 1, transmissionPanel.y, transmissionPanel.h), 12, 0, TAU);
+    ctx.stroke();
+  }
+  drawAxisLabels(ctx, transmissionPanel.x, transmissionPanel.y, transmissionPanel.w, transmissionPanel.h,
+    [[2, "2"], [6, "6"], [10, "10"]],
+    [[0, "0"], [.5, ".5"], [1, "1"]],
+    d => mapX(d, 2, 10, transmissionPanel.x, transmissionPanel.w),
+    value => mapY(value, 0, 1, transmissionPanel.y, transmissionPanel.h)
+  );
+  drawLegend(ctx, [["T(d) ∝ exp(-2κd)", "#0f766e"]], transmissionPanel.x + transmissionPanel.w - 190, transmissionPanel.y + 24);
+
+  plotFrame(ctx, currentPanel.x, currentPanel.y, currentPanel.w, currentPanel.h, "相对隧穿电流 Irel(d)", "d / Å", "log₁₀(Irel)");
+  drawGrid(ctx, currentPanel.x, currentPanel.y, currentPanel.w, currentPanel.h);
+  const current = p.bias * Math.exp(-2 * kappa * p.d);
+  ctx.strokeStyle = "#2563eb"; ctx.lineWidth = 4; ctx.beginPath();
+  for (let i = 0; i < 400; i++) {
+    const d = 2 + 8 * i / 399;
+    const I = Math.max(p.bias * Math.exp(-2 * kappa * d), 1e-10);
+    const px = mapX(d, 2, 10, currentPanel.x, currentPanel.w);
+    const py = mapY(Math.log10(I), -10, 0, currentPanel.y, currentPanel.h);
+    i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+  }
+  ctx.stroke();
+  ctx.fillStyle = "#dc2626";
+  ctx.beginPath();
+  ctx.arc(mapX(p.d, 2, 10, currentPanel.x, currentPanel.w), mapY(Math.log10(Math.max(current, 1e-10)), -10, 0, currentPanel.y, currentPanel.h), 6, 0, TAU);
   ctx.fill();
   if (focus === "I" || focus === "d" || focus === "bias") {
     ctx.strokeStyle = "#f59e0b";
     ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.arc(mapX(p.d, 2, 10, bottom.x, bottom.w), mapY(Math.log10(Math.max(current, 1e-10)), -10, 0, bottom.y, bottom.h), 12, 0, TAU);
+    ctx.arc(mapX(p.d, 2, 10, currentPanel.x, currentPanel.w), mapY(Math.log10(Math.max(current, 1e-10)), -10, 0, currentPanel.y, currentPanel.h), 12, 0, TAU);
     ctx.stroke();
   }
   updateLinkedUI("stm", { ...p, kappa, I: current });
-  $("#stmSummary").textContent = `有效 κ≈${kappa.toFixed(3)} Å⁻¹；当前相对电流 Irel≈${current.toExponential(3)}；距离每增加 1 Å，电流约变为原来的 ${Math.exp(-2 * kappa).toFixed(3)} 倍。`;
+  $("#stmSummary").textContent = `有效 κ≈${kappa.toFixed(3)} Å⁻¹；当前归一化透射趋势 T(d)/T(2 Å)≈${transmissionNow.toExponential(3)}；当前相对电流 Irel≈${current.toExponential(3)}。距离每增加 1 Å，二者约变为原来的 ${Math.exp(-2 * kappa).toFixed(3)} 倍。`;
 }
 
 function flashCurrent(p, gateV = p.gateV) {
@@ -2046,7 +2300,7 @@ function drawRTD() {
   const xMap = x => mapX(x, 0, totalW, top.x, top.w);
   const yMap = e => mapY(e, -0.05, Math.max(p.barrierHeight * 1.3, met.e1 * 1.8, 0.55), top.y, top.h);
 
-  plotFrame(ctx, top.x, top.y, top.w, top.h, "RTD：双势垒量子阱、共振能级与透射波", "生长方向 x / nm", "能量 / eV");
+  plotFrame(ctx, top.x, top.y, top.w, top.h, "共振隧穿二极管：双势垒量子阱、共振能级与透射波", "生长方向 x / nm", "能量 / eV");
   drawGrid(ctx, top.x, top.y, top.w, top.h);
   ctx.fillStyle = "rgba(37, 99, 235, 0.13)";
   ctx.fillRect(xMap(0), yMap(p.barrierHeight), xMap(p.barrierWidth) - xMap(0), yMap(0) - yMap(p.barrierHeight));
@@ -2093,7 +2347,7 @@ function drawRTD() {
   );
   drawLegend(ctx, [["双势垒势能", "#2563eb"], ["阱内准束缚能级", "#7c3aed", true], ["电子入射能量", "#dc2626", true], ["透射波示意", "#f59e0b"]], top.x + top.w - 190, top.y + 28);
 
-  plotFrame(ctx, bottom.x, bottom.y, bottom.w, bottom.h, "RTD I-V 曲线：共振峰与负微分电阻", "偏压 / V", "相对电流 / a.u.");
+  plotFrame(ctx, bottom.x, bottom.y, bottom.w, bottom.h, "共振隧穿二极管 I-V 曲线：共振峰与负微分电阻", "偏压 / V", "相对电流 / a.u.");
   drawGrid(ctx, bottom.x, bottom.y, bottom.w, bottom.h);
   const samples = linspace(0, 0.8, 420).map(v => [v, rtdMetrics(p, v).current]);
   const imax = Math.max(...samples.map(([, i]) => i), 0.01) * 1.12;
@@ -2872,7 +3126,7 @@ document.addEventListener("click", (e) => {
   if (action === "save-flash") saveCanvas("flashCanvas", "闪存隧穿.png");
   if (action === "update-rtd") drawRTD();
   if (action === "reset-rtd") resetModel("rtd");
-  if (action === "save-rtd") saveCanvas("rtdCanvas", "共振隧穿二极管RTD.png");
+  if (action === "save-rtd") saveCanvas("rtdCanvas", "共振隧穿二极管.png");
 });
 
 document.addEventListener("mouseover", (e) => {
