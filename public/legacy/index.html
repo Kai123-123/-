@@ -20,6 +20,9 @@
       <button class="nav-link" data-page="stm">STM 应用</button>
       <button class="nav-link" data-page="flash">闪存隧穿</button>
       <button class="nav-link" data-page="rtd">共振隧穿</button>
+      <button class="nav-link" data-page="videos">科普视频</button>
+      <button id="adminNav" class="nav-link hidden" data-page="admin">教学管理</button>
+      <button class="nav-link" data-page="history">我的学习</button>
     </nav>
     <div class="auth-bar">
       <span id="authStatus">未登录：仅开放一维模型</span>
@@ -47,13 +50,15 @@
               <button type="button" data-action="home-search">进入</button>
             </div>
             <div class="learnly-progress">
-              <div>
-                <strong id="homeProgressPercent">0%</strong>
-                <span>总体进度</span>
+              <div class="home-map-heading">
+                <div>
+                  <span>核心探究路线</span>
+                  <strong id="homeMapSummary">0 / 9</strong>
+                </div>
+                <button type="button" data-page="history">完整进度</button>
               </div>
-              <div class="home-progress-track"><span id="homeProgressBar"></span></div>
+              <div id="homeProgressMap" class="home-mini-map"></div>
               <p id="homeProgressState">完成核心任务后解锁拓展应用</p>
-              <div id="homeProgressList" class="home-progress-list"></div>
             </div>
           </section>
 
@@ -131,19 +136,23 @@
           </section>
         </div>
 
-        <footer class="learnly-bottom liquid-glass animate-fade-up delay-5">
-          <h2>核心概念学习 → 典型现象应用 → 工程器件迁移</h2>
-          <button class="learnly-bottom-btn" data-page="oneD">开始第一个核心任务</button>
-        </footer>
-        <aside class="home-now-widget liquid-glass animate-fade-up delay-4" aria-label="学习状态">
-          <div class="home-now-icon">ψ</div>
-          <div>
-            <strong>正在进行</strong>
-            <p>预测 → 观察 → 解释</p>
-            <div class="home-eq-bars"><span></span><span></span><span></span><span></span></div>
-          </div>
-        </aside>
+        <section class="home-bottom-dashboard animate-fade-up delay-5">
+          <footer id="homeAchievementSummary" class="learnly-bottom liquid-glass" aria-label="成就进度摘要"></footer>
+          <aside id="feedbackMailbox" class="home-now-widget home-feedback-mailbox liquid-glass" aria-label="学习反馈信箱"></aside>
+        </section>
       </div>
+    </section>
+
+    <section id="history" class="page history-page">
+      <div id="learningDashboard"></div>
+    </section>
+
+    <section id="videos" class="page video-library-page">
+      <div id="videoLibrary"></div>
+    </section>
+
+    <section id="admin" class="page admin-page">
+      <div id="adminDashboard"></div>
     </section>
 
     <section id="oneD" class="page sim-layout">
@@ -441,11 +450,28 @@
     </div>
   </div>
 
+  <div id="videoModal" class="video-modal hidden" role="dialog" aria-modal="true" aria-labelledby="videoModalTitle">
+    <div class="video-dialog">
+      <button class="video-close" type="button" data-video-action="close" aria-label="关闭视频">×</button>
+      <div class="video-player-shell">
+        <video id="videoPlayer" controls playsinline preload="metadata"></video>
+      </div>
+      <div id="videoModalDetail" class="video-modal-detail"></div>
+    </div>
+  </div>
+
+  <div id="feedbackModal" class="feedback-modal hidden" role="dialog" aria-modal="true" aria-labelledby="feedbackModalTitle">
+    <div class="feedback-dialog">
+      <button class="feedback-close" type="button" data-feedback-action="close" aria-label="关闭反馈表单">×</button>
+      <div id="feedbackFormContent"></div>
+    </div>
+  </div>
+
   <div id="authModal" class="auth-modal hidden" role="dialog" aria-modal="true" aria-labelledby="authTitle">
     <div class="auth-dialog">
       <button class="auth-close" type="button" data-auth-action="close" aria-label="关闭">×</button>
       <h2 id="authTitle">登录后解锁完整平台</h2>
-      <p class="auth-note">未注册或未登录时，平台只开放首页和一维量子隧穿页面。</p>
+      <p class="auth-note">未注册或未登录时，平台开放首页、一维量子隧穿和科普视频页面。</p>
       <div class="auth-tabs">
         <button class="active" type="button" data-auth-mode="login">登录</button>
         <button type="button" data-auth-mode="register">注册</button>
