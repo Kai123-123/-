@@ -5,7 +5,7 @@ const path = require("path");
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const mysql = require("mysql2/promise");
+const { DatabaseSync } = require("node:sqlite");
 
 function loadLocalEnv() {
   const envPath = path.join(__dirname, ".env");
@@ -31,7 +31,7 @@ const DIFY_BASE_URL = (process.env.DIFY_BASE_URL || "https://api.dify.ai/v1").re
 const DATA_DIR = path.join(__dirname, "data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
-const DB_NAME = process.env.DB_NAME || "quantum_tunneling_platform";
+const SQLITE_FILE = path.join(DATA_DIR, process.env.SQLITE_FILE || "quantum_tunneling_platform.sqlite");
 const MODULES = new Set(["oneD", "stm", "alpha", "flash", "rtd"]);
 const MODULE_DIFY_ENV = {
   oneD: "DIFY_API_KEY_ONED",
@@ -43,6 +43,59 @@ const MODULE_DIFY_ENV = {
 
 let pool = null;
 let databaseError = null;
+
+class SqlitePool {
+  constructor(filename) {
+    this.db = new DatabaseSync(filename);
+    this.db.exec("PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;");
+  }
+
+  normalize(sql) {
+    let normalized = String(sql)
+      .replace(/CURRENT_TIMESTAMP\(3\)/gi, "CURRENT_TIMESTAMP")
+      .replace(/DATE_SUB\(NOW\(\), INTERVAL 7 DAY\)/gi, "datetime('now', '-7 day')")
+      .replace(/GROUP_CONCAT\(DISTINCT t\.task_id ORDER BY t\.task_id\)/gi, "GROUP_CONCAT(DISTINCT t.task_id)");
+    if (/^\s*CREATE TABLE/i.test(normalized)) {
+      normalized = normalized
+        .replace(/id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,/gi, "id INTEGER NOT NULL,")
+        .replace(/\s+UNIQUE KEY\s+\w+\s*\(([^)]+)\)/gi, " UNIQUE ($1)")
+        .replace(/^\s*KEY\s+[^\n]+,?\s*$/gim, "")
+        .replace(/^\s*CONSTRAINT\s+[^\n]+,?\s*$/gim, "")
+        .replace(/\s+ENGINE=\w+\s+DEFAULT CHARSET=\w+\s+COLLATE=\w+/gi, "")
+        .replace(/\b(BIGINT|INT|TINYINT|DECIMAL|VARCHAR|CHAR|DATETIME|JSON)\s+UNSIGNED\b/gi, "$1")
+        .replace(/\b(BIGINT|INT|TINYINT|DECIMAL|VARCHAR|CHAR|DATETIME)\((\d+)\)/gi, "$1")
+        .replace(/,\s*\)/g, ")");
+    }
+    return normalized
+  }
+
+  exec(sql) {
+    this.db.exec(this.normalize(sql));
+  }
+
+  async query(sql, params = []) {
+    return this.run(sql, params);
+  }
+
+  async execute(sql, params = []) {
+    return this.run(sql, params);
+  }
+
+  run(sql, params = []) {
+    const normalized = this.normalize(sql);
+    const statement = this.db.prepare(normalized);
+    const values = params.map(value => value instanceof Date ? value.toISOString() : value);
+    if (/^\s*(SELECT|PRAGMA|WITH)\b/i.test(normalized)) {
+      return [statement.all(...values)];
+    }
+    const result = statement.run(...values);
+    return [{ affectedRows: result.changes, insertId: Number(result.lastInsertRowid || 0) }];
+  }
+
+  close() {
+    this.db.close();
+  }
+}
 
 function ensureLocalDirectories() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -59,38 +112,9 @@ function readLegacyUsers() {
   }
 }
 
-function mysqlConfig(database) {
-  return {
-    host: process.env.DB_HOST || "127.0.0.1",
-    port: Number(process.env.DB_PORT || 3306),
-    user: process.env.DB_USER || "root",
-    password: process.env.DB_PASSWORD || "",
-    database,
-    waitForConnections: true,
-    connectionLimit: Number(process.env.DB_CONNECTION_LIMIT || 10),
-    queueLimit: 0,
-    charset: "utf8mb4"
-  };
-}
-
-function validateDatabaseName() {
-  if (!/^[A-Za-z0-9_]+$/.test(DB_NAME)) {
-    throw new Error("DB_NAME 只能包含字母、数字和下划线。");
-  }
-}
-
 async function initializeDatabase() {
-  validateDatabaseName();
   ensureLocalDirectories();
-
-  const bootstrap = await mysql.createConnection(mysqlConfig(undefined));
-  try {
-    await bootstrap.query(`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
-  } finally {
-    await bootstrap.end();
-  }
-
-  pool = mysql.createPool(mysqlConfig(DB_NAME));
+  pool = new SqlitePool(SQLITE_FILE);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -291,14 +315,8 @@ async function ensureAiConversationColumns() {
     ["student_feedback", "VARCHAR(16) NULL"]
   ];
   for (const [column, definition] of columns) {
-    const [rows] = await pool.execute(
-      `SELECT COLUMN_NAME
-       FROM information_schema.COLUMNS
-       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'ai_conversations' AND COLUMN_NAME = ?
-       LIMIT 1`,
-      [DB_NAME, column]
-    );
-    if (!rows.length) {
+    const [rows] = await pool.execute("PRAGMA table_info(ai_conversations)");
+    if (!rows.some(row => row.name === column)) {
       await pool.query(`ALTER TABLE ai_conversations ADD COLUMN \`${column}\` ${definition}`);
     }
   }
@@ -313,21 +331,15 @@ async function ensureTaskAttemptColumns() {
     ["evidence_json", "JSON NULL"]
   ];
   for (const [column, definition] of columns) {
-    const [rows] = await pool.execute(
-      `SELECT COLUMN_NAME
-       FROM information_schema.COLUMNS
-       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'task_attempts' AND COLUMN_NAME = ?
-       LIMIT 1`,
-      [DB_NAME, column]
-    );
-    if (!rows.length) {
+    const [rows] = await pool.execute("PRAGMA table_info(task_attempts)");
+    if (!rows.some(row => row.name === column)) {
       await pool.query(`ALTER TABLE task_attempts ADD COLUMN \`${column}\` ${definition}`);
     }
   }
 }
 
 async function ensureAchievementColumns() {
-  await pool.query("ALTER TABLE achievements MODIFY COLUMN criteria_key VARCHAR(255) NULL");
+  // SQLite does not require a separate MODIFY COLUMN migration here.
 }
 
 const achievementSeeds = [
@@ -356,16 +368,16 @@ async function seedAchievements() {
       `INSERT INTO achievements
         (code, title, description, category, icon, rarity, criteria_type, criteria_key, target_value, sort_order)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-        title = VALUES(title),
-        description = VALUES(description),
-        category = VALUES(category),
-        icon = VALUES(icon),
-        rarity = VALUES(rarity),
-        criteria_type = VALUES(criteria_type),
-        criteria_key = VALUES(criteria_key),
-        target_value = VALUES(target_value),
-        sort_order = VALUES(sort_order),
+       ON CONFLICT(code) DO UPDATE SET
+        title = excluded.title,
+        description = excluded.description,
+        category = excluded.category,
+        icon = excluded.icon,
+        rarity = excluded.rarity,
+        criteria_type = excluded.criteria_type,
+        criteria_key = excluded.criteria_key,
+        target_value = excluded.target_value,
+        sort_order = excluded.sort_order,
         is_active = 1`,
       item
     );
@@ -378,7 +390,7 @@ async function migrateLegacyUsers() {
     await pool.execute(
       `INSERT INTO users (username, role, password_hash, created_at)
        VALUES (?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE role = VALUES(role), password_hash = VALUES(password_hash)`,
+       ON CONFLICT(username) DO UPDATE SET role = excluded.role, password_hash = excluded.password_hash`,
       [user.username, user.role || "student", user.passwordHash, user.createdAt ? new Date(user.createdAt) : new Date()]
     );
   }
@@ -484,7 +496,7 @@ function databaseMiddleware(req, res, next) {
   if (!pool) {
     return res.status(503).json({
       error: "学习档案数据库尚未连接。",
-      detail: databaseError?.message || "请在 .env 中配置 MySQL 连接信息后重启服务。"
+      detail: databaseError?.message || "请检查 SQLite 数据库文件和 data 目录权限后重启服务。"
     });
   }
   next();
@@ -570,8 +582,8 @@ app.post("/api/learning/sessions", databaseMiddleware, authMiddleware, async (re
   await pool.execute(
     `INSERT INTO learning_sessions (id, user_id, module)
      VALUES (?, ?, ?)
-     ON DUPLICATE KEY UPDATE
-       module = VALUES(module),
+     ON CONFLICT(id) DO UPDATE SET
+       module = excluded.module,
        last_active_at = CURRENT_TIMESTAMP(3),
        ended_at = NULL,
        status = 'active'`,
@@ -1117,12 +1129,12 @@ async function updateKnowledgeMastery(user, payload, components) {
     `INSERT INTO knowledge_mastery
       (user_id, module, knowledge_point, attempts, correct_attempts, hint_count, mastery_score)
      VALUES (?, ?, ?, ?, ?, ?, ?)
-     ON DUPLICATE KEY UPDATE
-      attempts = VALUES(attempts),
-      correct_attempts = VALUES(correct_attempts),
-      hint_count = VALUES(hint_count),
-      mastery_score = VALUES(mastery_score),
-      updated_at = CURRENT_TIMESTAMP(3)`,
+     ON CONFLICT(user_id, module, knowledge_point) DO UPDATE SET
+      attempts = excluded.attempts,
+      correct_attempts = excluded.correct_attempts,
+      hint_count = excluded.hint_count,
+      mastery_score = excluded.mastery_score,
+      updated_at = CURRENT_TIMESTAMP`,
     [user.id, module, knowledgePoint, attempts, correctAttempts, hintCount, masteryScore.toFixed(2)]
   );
   return {
@@ -1366,12 +1378,12 @@ async function evaluateAchievements(user) {
       `INSERT INTO user_achievements
         (user_id, achievement_id, progress_current, progress_target, status, unlocked_at)
        VALUES (?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-        progress_current = GREATEST(progress_current, VALUES(progress_current)),
-        progress_target = VALUES(progress_target),
-        status = IF(status = 'unlocked', 'unlocked', VALUES(status)),
-        unlocked_at = IF(status = 'unlocked', unlocked_at, VALUES(unlocked_at)),
-        updated_at = CURRENT_TIMESTAMP(3)`,
+       ON CONFLICT(user_id, achievement_id) DO UPDATE SET
+        progress_current = MAX(user_achievements.progress_current, excluded.progress_current),
+        progress_target = excluded.progress_target,
+        status = CASE WHEN user_achievements.status = 'unlocked' THEN 'unlocked' ELSE excluded.status END,
+        unlocked_at = CASE WHEN user_achievements.status = 'unlocked' THEN user_achievements.unlocked_at ELSE excluded.unlocked_at END,
+        updated_at = CURRENT_TIMESTAMP`,
       [
         user.id,
         achievement.id,
@@ -1608,10 +1620,10 @@ if (fs.existsSync(distDir)) {
 }
 
 initializeDatabase()
-  .then(() => console.log(`MySQL learning archive ready: ${DB_NAME}`))
+  .then(() => console.log(`SQLite learning archive ready: ${SQLITE_FILE}`))
   .catch(error => {
     databaseError = error;
-    console.error("MySQL initialization failed:", error.message);
+    console.error("SQLite initialization failed:", error.message);
   })
   .finally(() => {
     app.listen(PORT, () => {

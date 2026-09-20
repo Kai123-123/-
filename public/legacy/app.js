@@ -2612,7 +2612,7 @@ async function renderLearningDashboard() {
       <div class="history-shell">
         <div class="history-error">
           <strong>学习档案暂时无法加载</strong>
-          <p>${escapeHtml(error.message || "请确认 MySQL 服务和后端已正常启动。")}</p>
+          <p>${escapeHtml(error.message || "请确认 SQLite 数据库文件和后端已正常启动。")}</p>
           <button class="outline-btn small history-refresh" data-action="history-refresh">重新加载</button>
         </div>
       </div>

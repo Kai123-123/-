@@ -12,16 +12,6 @@ if errorlevel 1 (
 
 if not exist "logs" mkdir "logs"
 
-sc query MySQL80 | findstr /I "RUNNING" >nul
-if errorlevel 1 (
-  echo Starting MySQL80 service...
-  net start MySQL80 >nul 2>nul
-  if errorlevel 1 (
-    echo [WARNING] MySQL80 could not be started automatically.
-    echo Run this script as administrator if learning records are unavailable.
-  )
-)
-
 if not exist "dist\index.html" (
   echo Building platform files...
   call npm run build
