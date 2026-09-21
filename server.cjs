@@ -48,6 +48,12 @@ class SqlitePool {
   constructor(filename) {
     this.db = new DatabaseSync(filename);
     this.db.exec("PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;");
+    this.db.function("FIELD", { varargs: true }, (val, ...args) => {
+      const idx = args.indexOf(val);
+      return idx === -1 ? args.length + 1 : idx + 1;
+    });
+    this.db.function("GREATEST", { varargs: true }, (...args) => Math.max(...args.map(Number)));
+    this.db.function("LEAST", { varargs: true }, (...args) => Math.min(...args.map(Number)));
   }
 
   normalize(sql) {
@@ -1583,7 +1589,7 @@ app.get("/api/admin/feedback", databaseMiddleware, authMiddleware, adminMiddlewa
      FROM user_feedback f
      JOIN users u ON u.id = f.user_id
      ${where}
-     ORDER BY FIELD(f.status, 'new', 'read', 'resolved'), f.created_at DESC
+     ORDER BY CASE f.status WHEN 'new' THEN 1 WHEN 'read' THEN 2 WHEN 'resolved' THEN 3 ELSE 4 END, f.created_at DESC
      LIMIT 100`,
     params
   );
