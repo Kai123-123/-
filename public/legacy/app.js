@@ -4,11 +4,11 @@ const state = {
   page: "home",
   plotMode: "oneD2d",
   heroPhase: 0,
-  oneD: { V0: 8, a: 1.2, m: 1, E: 3, xmin: -2, xmax: 4, n: 1200 },
+  oneD: { V0: 8, a: 0.6, m: 1, E: 5, xmin: -2, xmax: 4, n: 1200 },
   alpha: { Zd: 82, Ealpha: 8.8, R: 8, well: -25 },
-  stm: { d: 5, phi: 4.5, bias: 0.1 },
-  flash: { gateV: 10, tox: 8, phi: 3.2, vth: 1.2 },
-  rtd: { barrierHeight: 0.42, barrierWidth: 1.8, wellWidth: 5.0, bias: 0.28, mEff: 0.067 },
+  stm: { d: 4, phi: 4.5, bias: 0.1 },
+  flash: { gateV: 12, tox: 8, phi: 3.2, vth: 1.2 },
+  rtd: { barrierHeight: 0.42, barrierWidth: 1.6, wellWidth: 5.0, bias: 0, mEff: 0.067 },
   oneDFocus: null,
   oneDFocusLocked: false,
   linkedFocusModule: null,
@@ -99,11 +99,11 @@ const state = {
 };
 
 const defaults = {
-  oneD: { V0: 8, a: 1.2, m: 1, E: 3, xmin: -2, xmax: 4, n: 1200 },
+  oneD: { V0: 8, a: 0.6, m: 1, E: 5, xmin: -2, xmax: 4, n: 1200 },
   alpha: { Zd: 82, Ealpha: 8.8, R: 8, well: -25 },
-  stm: { d: 5, phi: 4.5, bias: 0.1 },
-  flash: { gateV: 10, tox: 8, phi: 3.2, vth: 1.2 },
-  rtd: { barrierHeight: 0.42, barrierWidth: 1.8, wellWidth: 5.0, bias: 0.28, mEff: 0.067 }
+  stm: { d: 4, phi: 4.5, bias: 0.1 },
+  flash: { gateV: 12, tox: 8, phi: 3.2, vth: 1.2 },
+  rtd: { barrierHeight: 0.42, barrierWidth: 1.6, wellWidth: 5.0, bias: 0, mEff: 0.067 }
 };
 
 const controlSyncers = [];
@@ -252,32 +252,32 @@ const linkedSymbolInfo = {
     barrierHeight: {
       name: "势垒高度 Vb",
       region: "双势垒量子阱中的左右势垒高度。",
-      explain: "势垒高度影响电子耦合强度和透射概率。势垒过高时共振峰会变窄、通过电流减小。"
+      explain: "势垒高度影响电子耦合强度和透射概率。势垒升高时共振峰通常变窄；理想对称结构在共振点仍可完全透射。"
     },
     barrierWidth: {
       name: "势垒宽度 b",
       region: "双势垒结构中每个势垒的宽度。",
-      explain: "势垒宽度越大，电子与阱内态耦合越弱，共振透射峰通常更尖锐但电流更小。"
+      explain: "势垒宽度越大，电子与阱内态耦合越弱，共振透射峰通常更尖锐；理想对称结构在共振点仍可完全透射。"
     },
     wellWidth: {
       name: "量子阱宽度 w",
       region: "两个势垒之间的量子阱区域。",
       explain: "阱宽决定准束缚能级位置。w 改变会移动 E₁，从而改变共振条件。"
     },
-    bias: {
-      name: "外加偏压 V",
-      region: "I-V 曲线横轴与能级对准/失配的控制量。",
-      explain: "偏压改变发射极电子能量与阱内能级的相对位置，导致共振峰和负微分电阻。"
-    },
     e1: {
-      name: "阱内基态能级 E₁",
-      region: "量子阱内虚线标出的准束缚能级。",
+      name: "第一共振能量 E₁",
+      region: "量子阱内虚线标出的第一透射共振能量。",
       explain: "当入射电子能量与 E₁ 对准时，电子可通过双势垒发生共振透射。"
     },
-    current: {
-      name: "相对电流 I",
-      region: "共振隧穿二极管 I-V 曲线上的红色工作点。",
-      explain: "电流随偏压先升后降的区域体现负微分电阻，是共振隧穿二极管的核心器件特征。"
+    transmission: {
+      name: "透射率 T(E)",
+      region: "下方入射能量—透射率曲线。",
+      explain: "零偏压下仍存在透射。理想对称双势垒在共振能量处 T≈1；平衡态净电流为零。"
+    },
+    mEff: {
+      name: "有效质量 m*",
+      region: "双势垒与量子阱中统一采用的电子有效质量。",
+      explain: "有效质量影响波数与阱内准束缚态，改变共振峰位置和宽度。"
     }
   }
 };
@@ -1106,7 +1106,7 @@ function metricSnapshotText(module, metrics) {
   if (module === "stm") return `Irel=${metrics.I.toExponential(3)}, d=${metrics.d.toFixed(1)} Å, φ=${metrics.phi.toFixed(1)} eV`;
   if (module === "alpha") return `P≈${metrics.penetrability.toExponential(3)}, r₂-R=${metrics.width.toFixed(2)} fm, Eα=${metrics.Ealpha.toFixed(1)} MeV`;
   if (module === "flash") return `JFN=${metrics.j.toExponential(3)}, Eox=${metrics.eox.toFixed(3)} V/nm, Vg=${metrics.gateV.toFixed(1)} V`;
-  if (module === "rtd") return `I=${metrics.current.toExponential(3)}, E₁=${metrics.e1.toFixed(3)} eV, V=${metrics.bias.toFixed(2)} V`;
+  if (module === "rtd") return `T(E₁)=${metrics.transmission.toFixed(4)}, E₁=${metrics.e1.toFixed(4)} eV, V=0 V`;
   return "";
 }
 
@@ -1461,14 +1461,14 @@ const principleIntroConfigs = {
   },
   rtd: {
     title: "共振隧穿：能级对齐时形成透射峰",
-    subtitle: "能量匹配时发生共振隧穿，并形成负微分电阻效应",
+    subtitle: "零偏压对称双势垒：能量匹配时出现共振透射峰",
     accent: "#8b5cf6",
     duration: 30,
     chapters: [
       { at: 0, title: "进入双势垒" },
       { at: .3, title: "能级失配" },
       { at: .56, title: "共振对齐" },
-      { at: .82, title: "电流峰与下降" }
+      { at: .82, title: "透射峰与失配" }
     ],
     draw: drawIntroRTD
   }
@@ -2166,7 +2166,7 @@ function drawIntroRTD(ctx, w, h, t) {
   drawIntroLabel(ctx, "透射系数 T(E)", graphX, graphY - 18, "#7dd3fc", 16);
   drawIntroLabel(ctx, "透射峰", graphX + graphW * levelNorm, graphY - 18, "#c4b5fd", 16, "center");
   if (t > levelNorm + .18) {
-    drawIntroLabel(ctx, "峰值后电流下降", graphX + graphW * .76, graphY + graphH - 18, "#fb923c", 16, "center");
+    drawIntroLabel(ctx, "能量失配，透射减弱", graphX + graphW * .76, graphY + graphH - 18, "#fb923c", 16, "center");
   }
 }
 
@@ -3212,8 +3212,8 @@ const aiModuleContext = {
   rtd: {
     name: "共振隧穿助教",
     role: "共振隧穿二极管教学助教",
-    focus: "解释双势垒量子阱、阱宽、势垒宽度、共振能级、I-V 曲线和负微分电阻。",
-    formulas: "E1≈π²ℏ²/(2m*w²)，T(E) 近似 Lorentz 共振峰，偏压改变能级对准。"
+    focus: "解释零偏压下的对称等高双势垒、有效质量、结构参数与 T(E) 共振峰。偏压固定为 0，不是可调参数；平衡态净电流为零，但透射率可以非零。",
+    formulas: "采用分段常势传输矩阵计算 T(E)，两侧有效质量相同；E₁ 为第一透射共振能量。π²ℏ²/(2m*w²) 仅为无限深阱估算，并非有限双势垒的实际共振位置。"
   }
 };
 
@@ -3332,10 +3332,9 @@ const tutorParameterInfo = {
     vth: { label: "阈值修正 Vth", effect: "有效电场和电流会怎样变化" }
   },
   rtd: {
-    barrierHeight: { label: "势垒高度 Vb", effect: "共振线宽和电流会怎样变化" },
+    barrierHeight: { label: "势垒高度 Vb", effect: "共振峰的位置和宽度会怎样变化" },
     barrierWidth: { label: "势垒宽度 b", effect: "共振透射峰会怎样变化" },
     wellWidth: { label: "量子阱宽度 w", effect: "共振能级会怎样变化" },
-    bias: { label: "外加偏压 V", effect: "能级对齐和电流会怎样变化" },
     mEff: { label: "有效质量 m*", effect: "阱内能级和共振位置会怎样变化" }
   }
 };
@@ -4255,7 +4254,7 @@ function announcementFor(page) {
     alpha: ["欢迎来到 α 粒子发射页面", "可观察库仑势垒、外转折点和 α 粒子波函数的隧穿衰减。"],
     stm: ["欢迎来到扫描隧道显微镜 STM 页面", "可调参数包括探针距离、材料功函数和偏置电压。"],
     flash: ["欢迎来到闪存隧穿页面", "可观察栅压、氧化层厚度和势垒高度对 Fowler-Nordheim 隧穿电流的影响。"],
-    rtd: ["欢迎来到共振隧穿二极管页面", "可观察双势垒量子阱、共振透射峰和负微分电阻区。"],
+    rtd: ["欢迎来到共振隧穿二极管页面", "可观察零偏压下的等高双势垒、共振能量和透射率曲线。"],
     videos: ["欢迎来到科普视频库", "这里收录与量子隧穿相关的本地精选视频，可按模块筛选并进入对应仿真。"],
     admin: ["教学管理", "这里汇总普通用户的学习进度、模块使用情况和评价反馈。"],
     history: ["我的学习档案", "这里汇总你的学习时长、实验快照、任务记录和 AI 问答。"]
@@ -4428,9 +4427,9 @@ function linkedValueText(module, symbol, values) {
       barrierHeight: v => `当前值：Vb = ${v.barrierHeight.toFixed(2)} eV`,
       barrierWidth: v => `当前值：b = ${v.barrierWidth.toFixed(1)} nm`,
       wellWidth: v => `当前值：w = ${v.wellWidth.toFixed(1)} nm`,
-      bias: v => `当前值：V = ${v.bias.toFixed(2)} V`,
       e1: v => `当前值：E₁ = ${v.e1.toFixed(3)} eV`,
-      current: v => `当前值：I = ${v.current.toExponential(3)}`
+      transmission: v => `第一共振点：T(E₁) = ${v.transmission.toFixed(4)}`,
+      mEff: v => `当前值：m* = ${v.mEff.toFixed(3)} m₀`
     }
   };
   try {
@@ -4522,7 +4521,6 @@ function setupControls() {
     ["barrierHeight", { label: "势垒高度 Vb", min: 0.15, max: 0.8, step: 0.01, unit: "eV", icon: "Vb", format: 2 }],
     ["barrierWidth", { label: "单个势垒宽度", min: 0.8, max: 4, step: 0.1, unit: "nm", icon: "b", format: 1 }],
     ["wellWidth", { label: "量子阱宽度", min: 3, max: 10, step: 0.1, unit: "nm", icon: "w", format: 1 }],
-    ["bias", { label: "外加偏压", min: 0, max: 0.8, step: 0.01, unit: "V", icon: "V", format: 2 }],
     ["mEff", { label: "有效质量 m*", min: 0.04, max: 0.2, step: 0.001, unit: "m₀", icon: "m*", format: 3 }]
   ].forEach(([key, cfg]) => makeControl($("#rtdControls"), cfg, state.rtd, key, drawRTD));
 }
@@ -5566,140 +5564,192 @@ function drawFlash() {
   finishCanvasView(canvas);
 }
 
-function rtdMetrics(p, bias = p.bias) {
-  const e1 = 0.376 / (p.mEff * p.wellWidth * p.wellWidth);
-  const er = e1 + 0.18 * p.barrierHeight - 0.48 * bias;
-  const gamma = 0.012 + 0.055 * Math.exp(-1.65 * p.barrierWidth * Math.sqrt(Math.max(p.barrierHeight, 0.02) * p.mEff / 0.067));
-  const align = Math.exp(-((er - 0.11) ** 2) / (2 * (0.075 ** 2)));
-  const injection = Math.max(bias, 0.002);
-  const current = injection * align * (0.45 + 0.55 * gamma / 0.067);
-  return { e1, er, gamma, current, align };
+// ħ²/(2m₀) in eV·nm². Uniform effective mass in both contacts and all layers.
+const RTD_HBAR2_2M0 = 0.0380998212;
+let rtdSpectrumCache = null;
+
+function rtdLayer(E, V, width, mass) {
+  const q2 = (E - V) * mass / RTD_HBAR2_2M0;
+  // Propagate [ψ, ψ'] through a constant-potential layer; analytic E=V limit.
+  if (Math.abs(q2) < 1e-14) return [1, width, 0, 1];
+  const q = Math.sqrt(Math.abs(q2));
+  const c = q2 > 0 ? Math.cos(q * width) : Math.cosh(q * width);
+  const a = (q2 > 0 ? Math.sin(q * width) : Math.sinh(q * width)) / q;
+  return [c, a, -q2 * a, c];
+}
+
+function rtdMatrixProduct(a, b) {
+  return [a[0]*b[0]+a[1]*b[2], a[0]*b[1]+a[1]*b[3],
+    a[2]*b[0]+a[3]*b[2], a[2]*b[1]+a[3]*b[3]];
+}
+
+function rtdTransmission(p, energy) {
+  if (energy <= 0) return { transmission: 0, mismatch: 0, coupling: Infinity };
+  const k = Math.sqrt(energy * p.mEff / RTD_HBAR2_2M0);
+  const b = rtdLayer(energy, p.barrierHeight, p.barrierWidth, p.mEff);
+  const phase = k * p.wellWidth;
+  const d = (k*b[1] - b[2]/k) / 2;
+  const coupling = (k*b[1] + b[2]/k) / 2;
+  // Symmetric barrier–well–barrier transfer matrix, factored to avoid
+  // subtracting large matrix entries near narrow, fully transmitting peaks.
+  const mismatch = b[0]*Math.cos(phase) - d*Math.sin(phase);
+  const offDiagonal = 2 * coupling * mismatch;
+  return { transmission: 1 / (1 + offDiagonal*offDiagonal), mismatch, coupling };
+}
+
+function rtdSpectrum(p) {
+  const key = [p.barrierHeight, p.barrierWidth, p.wellWidth, p.mEff].join(':');
+  if (rtdSpectrumCache?.key === key) return rtdSpectrumCache;
+  const wellEstimate = Math.PI**2 * RTD_HBAR2_2M0 / (p.mEff*p.wellWidth**2);
+  const maxEnergy = Math.max(p.barrierHeight * 1.2, wellEstimate * 1.3);
+  const energies = linspace(0, maxEnergy, 1601);
+  const peaks = [];
+  // Bracket zeros of the phase mismatch, not maxima of sampled T(E).
+  // This retains resonances much narrower than a screen pixel.
+  let lo = maxEnergy * 1e-10;
+  let left = rtdTransmission(p, lo).mismatch;
+  for (const hi of energies.slice(1)) {
+    const right = rtdTransmission(p, hi).mismatch;
+    if (left * right < 0) {
+      let a = lo, b = hi, fa = left;
+      for (let n = 0; n < 60; n++) {
+        const mid = (a+b)/2;
+        const fm = rtdTransmission(p, mid).mismatch;
+        if (fa*fm <= 0) b = mid;
+        else { a = mid; fa = fm; }
+      }
+      const energy = (a+b)/2;
+      const h = Math.min(energy/100, maxEnergy*1e-6);
+      const derivative = (rtdTransmission(p, energy+h).mismatch-rtdTransmission(p, energy-h).mismatch)/(2*h);
+      const halfWidth = 1 / Math.max(2*Math.abs(rtdTransmission(p, energy).coupling*derivative), 1e-12);
+      peaks.push({ energy, halfWidth });
+      energies.push(energy);
+      for (const scale of [.05,.1,.25,.5,1,2,4,8,16,32]) {
+        for (const sign of [-1,1]) {
+          const e = energy + sign*halfWidth*scale;
+          if (e > 0 && e < maxEnergy) energies.push(e);
+        }
+      }
+    }
+    lo = hi;
+    left = right;
+  }
+  energies.sort((a,b) => a-b);
+  const samples = energies.map(energy => [energy, rtdTransmission(p, energy).transmission]);
+  rtdSpectrumCache = { key, maxEnergy, peaks, samples };
+  return rtdSpectrumCache;
+}
+
+function rtdMetrics(p) {
+  const spectrum = rtdSpectrum(p);
+  const first = spectrum.peaks[0];
+  const eEstimate = Math.PI**2 * RTD_HBAR2_2M0 / (p.mEff*p.wellWidth**2);
+  const e1 = first?.energy ?? eEstimate;
+  return { bias: 0, e1, er: e1, eEstimate, gamma: first?.halfWidth ?? 0,
+    transmission: rtdTransmission(p, e1).transmission, current: 0 };
+}
+
+function rtdWaveState(p, E, x) {
+  // Unit outgoing wave at the right boundary, propagated backwards.
+  const total = 2*p.barrierWidth+p.wellWidth;
+  const k = Math.sqrt(E*p.mEff/RTD_HBAR2_2M0);
+  let matrix = [1,0,0,1];
+  const layers = [[0,p.barrierWidth,p.barrierHeight],
+    [p.barrierWidth,p.barrierWidth+p.wellWidth,0],
+    [p.barrierWidth+p.wellWidth,total,p.barrierHeight]];
+  for (let i = layers.length-1; i >= 0; i--) {
+    const [a,b,V] = layers[i];
+    const distance = b-Math.max(x,a);
+    if (distance > 0) matrix = rtdMatrixProduct(rtdLayer(E,V,-distance,p.mEff),matrix);
+  }
+  return { psi: [matrix[0], k*matrix[1]], derivative: [matrix[2], k*matrix[3]] };
 }
 
 function drawRTD() {
   const p = state.rtd;
-  const { canvas, ctx } = beginCanvasView("rtdCanvas");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const top = { x: 145, y: 100, w: 705, h: 245 };
-  const bottom = { x: 145, y: 440, w: 705, h: 180 };
-  const legend = { x: 870, y: 110, w: 150 };
-  const totalW = 2 * p.barrierWidth + p.wellWidth;
+  p.bias = 0;
+  const { canvas, ctx } = beginCanvasView('rtdCanvas');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const top = { x:145,y:100,w:705,h:245 };
+  const bottom = { x:145,y:440,w:705,h:180 };
+  const total = 2*p.barrierWidth+p.wellWidth;
+  const padding = Math.max(p.barrierWidth*.65,.8);
   const met = rtdMetrics(p);
-  const focus = activeLinkedSymbol("rtd");
-  const xMap = x => mapX(x, 0, totalW, top.x, top.w);
-  const yMap = e => mapY(e, -0.05, Math.max(p.barrierHeight * 1.3, met.e1 * 1.8, 0.55), top.y, top.h);
-
-  plotFrame(ctx, top.x, top.y, top.w, top.h, "共振隧穿二极管：双势垒量子阱、共振能级与透射波", "生长方向 x / nm", "能量 / eV", 90);
-  drawGrid(ctx, top.x, top.y, top.w, top.h);
-  ctx.fillStyle = "rgba(37, 99, 235, 0.13)";
-  ctx.fillRect(xMap(0), yMap(p.barrierHeight), xMap(p.barrierWidth) - xMap(0), yMap(0) - yMap(p.barrierHeight));
-  ctx.fillRect(xMap(p.barrierWidth + p.wellWidth), yMap(p.barrierHeight - p.bias * 0.18), xMap(totalW) - xMap(p.barrierWidth + p.wellWidth), yMap(0) - yMap(p.barrierHeight - p.bias * 0.18));
-  if (focus === "barrierHeight" || focus === "barrierWidth") {
-    ctx.fillStyle = "rgba(245, 158, 11, .20)";
-    ctx.fillRect(xMap(0), yMap(p.barrierHeight), xMap(p.barrierWidth) - xMap(0), yMap(0) - yMap(p.barrierHeight));
-    ctx.fillRect(xMap(p.barrierWidth + p.wellWidth), yMap(p.barrierHeight - p.bias * 0.18), xMap(totalW) - xMap(p.barrierWidth + p.wellWidth), yMap(0) - yMap(p.barrierHeight - p.bias * 0.18));
+  const spectrum = rtdSpectrum(p);
+  const focus = activeLinkedSymbol('rtd');
+  const ymax = Math.max(p.barrierHeight*1.35,met.e1*1.3);
+  const xMap = x => mapX(x,-padding,total+padding,top.x,top.w);
+  const yMap = e => mapY(e,-ymax*.08,ymax,top.y,top.h);
+  plotFrame(ctx,top.x,top.y,top.w,top.h,'零偏压对称双势垒：共振能量与波函数','生长方向 x / nm','能量 / eV',90);
+  drawGrid(ctx,top.x,top.y,top.w,top.h);
+  const barrierFocus = ['barrierHeight','barrierWidth'].includes(focus);
+  ctx.fillStyle = barrierFocus ? 'rgba(245,158,11,.20)' : 'rgba(37,99,235,.13)';
+  for (const x of [0,p.barrierWidth+p.wellWidth]) {
+    ctx.fillRect(xMap(x),yMap(p.barrierHeight),xMap(x+p.barrierWidth)-xMap(x),yMap(0)-yMap(p.barrierHeight));
   }
-  if (focus === "wellWidth" || focus === "e1") {
-    ctx.fillStyle = "rgba(124, 58, 237, .16)";
-    ctx.fillRect(xMap(p.barrierWidth), top.y, xMap(p.barrierWidth + p.wellWidth) - xMap(p.barrierWidth), top.h);
+  if (focus === 'wellWidth' || focus === 'e1') {
+    ctx.fillStyle='rgba(124,58,237,.12)';
+    ctx.fillRect(xMap(p.barrierWidth),top.y,xMap(p.barrierWidth+p.wellWidth)-xMap(p.barrierWidth),top.h);
   }
-  ctx.strokeStyle = focus === "barrierHeight" || focus === "barrierWidth" || focus === "bias" ? "#f59e0b" : "#2563eb"; ctx.lineWidth = focus === "barrierHeight" || focus === "barrierWidth" || focus === "bias" ? 5 : 4; ctx.beginPath();
-  const potential = [
-    [0, p.barrierHeight],
-    [p.barrierWidth, p.barrierHeight],
-    [p.barrierWidth, 0],
-    [p.barrierWidth + p.wellWidth, 0],
-    [p.barrierWidth + p.wellWidth, Math.max(p.barrierHeight - p.bias * 0.18, 0.08)],
-    [totalW, Math.max(p.barrierHeight - p.bias * 0.18, 0.08)]
-  ];
-  potential.forEach(([x, e], i) => i ? ctx.lineTo(xMap(x), yMap(e)) : ctx.moveTo(xMap(x), yMap(e)));
+  ctx.strokeStyle=barrierFocus ? '#f59e0b' : '#2563eb';
+  ctx.lineWidth=barrierFocus ? 5 : 3;
+  ctx.beginPath();
+  const potential=[[-padding,0],[0,0],[0,p.barrierHeight],[p.barrierWidth,p.barrierHeight],
+    [p.barrierWidth,0],[p.barrierWidth+p.wellWidth,0],[p.barrierWidth+p.wellWidth,p.barrierHeight],
+    [total,p.barrierHeight],[total,0],[total+padding,0]];
+  potential.forEach(([x,e],i) => i ? ctx.lineTo(xMap(x),yMap(e)) : ctx.moveTo(xMap(x),yMap(e)));
   ctx.stroke();
-  ctx.strokeStyle = focus === "e1" || focus === "wellWidth" ? "#f59e0b" : "#7c3aed"; ctx.setLineDash([8, 7]); ctx.lineWidth = focus === "e1" || focus === "wellWidth" ? 5 : 2.6;
-  ctx.beginPath(); ctx.moveTo(xMap(p.barrierWidth), yMap(met.e1)); ctx.lineTo(xMap(p.barrierWidth + p.wellWidth), yMap(met.e1)); ctx.stroke(); ctx.setLineDash([]);
-  ctx.strokeStyle = "#dc2626"; ctx.setLineDash([9, 7]);
-  ctx.beginPath(); ctx.moveTo(top.x, yMap(0.11)); ctx.lineTo(top.x + top.w, yMap(0.11 - p.bias * 0.25)); ctx.stroke(); ctx.setLineDash([]);
-  ctx.strokeStyle = "#f59e0b"; ctx.lineWidth = 3; ctx.beginPath();
-  const amp = 0.055 + 0.11 * met.align;
-  for (let i = 0; i <= 520; i++) {
-    const x = totalW * i / 520;
-    let env = 1;
-    if (x < p.barrierWidth) env = 0.35 + 0.65 * Math.exp(-1.2 * (p.barrierWidth - x));
-    else if (x > p.barrierWidth + p.wellWidth) env = 0.3 + 0.7 * met.align;
-    const e = met.e1 + amp * env * Math.sin(2.8 * x + state.heroPhase * TAU);
-    i ? ctx.lineTo(xMap(x), yMap(e)) : ctx.moveTo(xMap(x), yMap(e));
+  // Display the first resonance by default; E is an observation energy, not a control.
+  ctx.strokeStyle='#dc2626'; ctx.lineWidth=2; ctx.setLineDash([9,7]);
+  ctx.beginPath();ctx.moveTo(top.x,yMap(met.e1));ctx.lineTo(top.x+top.w,yMap(met.e1));ctx.stroke();
+  ctx.strokeStyle=focus==='e1' ? '#f59e0b' : '#7c3aed'; ctx.lineWidth=4;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(xMap(p.barrierWidth),yMap(met.e1));ctx.lineTo(xMap(p.barrierWidth+p.wellWidth),yMap(met.e1));ctx.stroke();ctx.setLineDash([]);
+  const k=Math.sqrt(met.e1*p.mEff/RTD_HBAR2_2M0);
+  const left=rtdWaveState(p,met.e1,0);
+  const incoming=cScale(.5,cAdd(left.psi,cDiv(left.derivative,[0,k])));
+  const wave=[];
+  for(let i=0;i<=700;i++) {
+    const x=-padding+(total+2*padding)*i/700;
+    let psi;
+    if(x<0) psi=cAdd(cMul(left.psi,[Math.cos(k*x),0]),cScale(Math.sin(k*x)/k,left.derivative));
+    else if(x>total) psi=cExpI(k*(x-total));
+    else psi=rtdWaveState(p,met.e1,x).psi;
+    wave.push([x,cDiv(psi,incoming)]);
   }
-  ctx.stroke();
-  drawAxisLabels(ctx, top.x, top.y, top.w, top.h,
-    [
-      [0, "发射极"],
-      [p.barrierWidth / 2, "势垒 1"],
-      [p.barrierWidth + p.wellWidth / 2, "量子阱"],
-      [p.barrierWidth + p.wellWidth + p.barrierWidth / 2, "势垒 2"],
-      [totalW, "集电极"]
-    ],
-    [[0, "0"], [met.e1, `E₁=${met.e1.toFixed(2)}`], [p.barrierHeight, `Vb=${p.barrierHeight.toFixed(2)}`]],
-    xMap, yMap
-  );
-  drawSideLegendPanel(ctx, [
-    ["双势垒势能", "#2563eb"],
-    ["阱内能级", "#7c3aed", true],
-    ["入射能量", "#dc2626", true],
-    ["透射波", "#f59e0b"]
-  ], legend.x, legend.y, legend.w);
-
-  plotFrame(ctx, bottom.x, bottom.y, bottom.w, bottom.h, "共振隧穿二极管 I-V 曲线：共振峰与负微分电阻", "偏压 / V", "相对电流 / a.u.");
-  drawGrid(ctx, bottom.x, bottom.y, bottom.w, bottom.h);
-  const samples = linspace(0, 0.8, 420).map(v => [v, rtdMetrics(p, v).current]);
-  const imax = Math.max(...samples.map(([, i]) => i), 0.01) * 1.12;
-  ctx.strokeStyle = "#2563eb"; ctx.lineWidth = 4; ctx.beginPath();
-  samples.forEach(([v, cur], i) => {
-    const px = mapX(v, 0, 0.8, bottom.x, bottom.w);
-    const py = mapY(cur, 0, imax, bottom.y, bottom.h);
-    i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
-  });
-  ctx.stroke();
-  const peak = samples.reduce((a, b) => b[1] > a[1] ? b : a, samples[0]);
-  ctx.fillStyle = "rgba(220, 38, 38, 0.13)";
-  ctx.fillRect(mapX(peak[0], 0, 0.8, bottom.x, bottom.w), bottom.y, bottom.x + bottom.w - mapX(peak[0], 0, 0.8, bottom.x, bottom.w), bottom.h);
-  ctx.fillStyle = "#dc2626";
-  ctx.beginPath(); ctx.arc(mapX(p.bias, 0, 0.8, bottom.x, bottom.w), mapY(met.current, 0, imax, bottom.y, bottom.h), 6, 0, TAU); ctx.fill();
-  if (focus === "current" || focus === "bias") {
-    ctx.strokeStyle = "#f59e0b";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.arc(mapX(p.bias, 0, 0.8, bottom.x, bottom.w), mapY(met.current, 0, imax, bottom.y, bottom.h), 12, 0, TAU);
-    ctx.stroke();
-  }
-  drawAxisLabels(ctx, bottom.x, bottom.y, bottom.w, bottom.h,
-    isAnalysisView() ? [[0, "0"], [0.2, "0.2"], [0.4, "0.4"], [0.6, "0.6"], [0.8, "0.8"]] : [[0, "0"], [0.4, "0.4"], [0.8, "0.8"]],
-    isAnalysisView() ? [[0, "0"], [imax / 2, (imax / 2).toPrecision(2)], [imax, imax.toPrecision(2)]] : [[0, "0"], [imax, imax.toPrecision(2)]],
-    v => mapX(v, 0, .8, bottom.x, bottom.w),
-    value => mapY(value, 0, imax, bottom.y, bottom.h)
-  );
-  updateLinkedUI("rtd", { ...p, ...met });
-  $("#rtdSummary").textContent = `阱内基态能级 E₁≈${met.e1.toFixed(3)} eV；当前偏压下共振失配量约 ${(met.er - 0.11).toFixed(3)} eV；相对电流≈${met.current.toExponential(3)}。峰值右侧的阴影区域表示负微分电阻工作区。`;
-  registerCanvasHitTest(canvas, (px, py) => {
-    if (insideArea(px, py, top)) {
-      const x = clamp(unmapX(px, 0, totalW, top.x, top.w), 0, totalW);
-      let potential = 0;
-      if (x <= p.barrierWidth) potential = p.barrierHeight;
-      else if (x >= p.barrierWidth + p.wellWidth) potential = Math.max(p.barrierHeight - p.bias * .18, .08);
-      return [
-        { label: "生长方向 x", value: x, digits: 3, unit: "nm" },
-        { label: "双势垒势能", value: potential, digits: 4, unit: "eV", color: "#2563eb" },
-        { label: "阱内能级 E₁", value: met.e1, digits: 4, unit: "eV", color: "#7c3aed" },
-        { label: "共振对齐度", value: met.align, color: "#f59e0b" }
-      ];
+  const waveScale=ymax*.16/Math.max(1,...wave.map(([,psi])=>Math.sqrt(cAbs2(psi))));
+  ctx.strokeStyle='#f59e0b';ctx.lineWidth=2;ctx.beginPath();
+  wave.forEach(([x,psi],i)=>{
+    const y=met.e1+waveScale*psiRealPart(psi,state.heroPhase*TAU);
+    i ? ctx.lineTo(xMap(x),yMap(y)) : ctx.moveTo(xMap(x),yMap(y));
+  });ctx.stroke();
+  drawAxisLabels(ctx,top.x,top.y,top.w,top.h,
+    [[-padding/2,'入射区'],[p.barrierWidth/2,'势垒 1'],[total/2,'量子阱'],[total-p.barrierWidth/2,'势垒 2'],[total+padding/2,'透射区']],
+    [[0,'0'],[met.e1,'E₁='+met.e1.toFixed(3)],[p.barrierHeight,'Vb='+p.barrierHeight.toFixed(2)]],xMap,yMap);
+  drawSideLegendPanel(ctx,[['双势垒势能','#2563eb'],['第一共振能量','#7c3aed',true],['入射 E = E₁','#dc2626',true],['Re ψ（缩放）','#f59e0b']],870,110,150);
+  plotFrame(ctx,bottom.x,bottom.y,bottom.w,bottom.h,'对称双势垒透射谱：T(E) 共振峰','入射电子能量 E / eV','透射率 T(E)');
+  drawGrid(ctx,bottom.x,bottom.y,bottom.w,bottom.h);
+  const ex=e=>mapX(e,0,spectrum.maxEnergy,bottom.x,bottom.w);
+  const ty=t=>mapY(t,0,1.05,bottom.y,bottom.h);
+  ctx.strokeStyle=focus==='transmission' ? '#f59e0b' : '#2563eb';ctx.lineWidth=3;ctx.beginPath();
+  spectrum.samples.forEach(([e,t],i)=>i ? ctx.lineTo(ex(e),ty(t)) : ctx.moveTo(ex(e),ty(t)));ctx.stroke();
+  ctx.fillStyle='#dc2626';ctx.beginPath();ctx.arc(ex(met.e1),ty(met.transmission),5,0,TAU);ctx.fill();
+  drawAxisLabels(ctx,bottom.x,bottom.y,bottom.w,bottom.h,
+    linspace(0,spectrum.maxEnergy,5).map(e=>[e,e.toFixed(2)]),[[0,'0'],[.5,'0.5'],[1,'1']],ex,ty);
+  updateLinkedUI('rtd',{...p,...met});
+  $('#rtdSummary').textContent='外加偏压固定为 0 V，双势垒等高；第一共振能量 E₁='+met.e1.toFixed(4)+' eV，T(E₁)='+met.transmission.toFixed(4)+(met.e1 >= p.barrierHeight ? '（该峰高于势垒，属于越垒共振，并非亚势垒隧穿共振）' : '')+'。上图显示 E=E₁ 的波函数实部（统一缩放）；下图按入射能量扫描，悬停可读出 T(E)。采用统一有效质量、相干弹性散射模型；零偏压平衡态净电流为零。';
+  registerCanvasHitTest(canvas,(px,py)=>{
+    if(insideArea(px,py,top)) {
+      const x=clamp(unmapX(px,-padding,total+padding,top.x,top.w),-padding,total+padding);
+      const potential=(x>=0 && x<=p.barrierWidth || x>=p.barrierWidth+p.wellWidth && x<=total) ? p.barrierHeight : 0;
+      return [{label:'生长方向 x',value:x,digits:3,unit:'nm'},
+        {label:'势能 V(x)',value:potential,digits:4,unit:'eV',color:'#2563eb'},
+        {label:'第一共振能量 E₁',value:met.e1,digits:4,unit:'eV',color:'#7c3aed'}];
     }
-    if (insideArea(px, py, bottom)) {
-      const bias = clamp(unmapX(px, 0, .8, bottom.x, bottom.w), 0, .8);
-      const sampled = rtdMetrics(p, bias);
-      return [
-        { label: "偏压 V", value: bias, digits: 3, unit: "V" },
-        { label: "相对电流 I", value: sampled.current, color: "#2563eb" },
-        { label: "共振对齐度", value: sampled.align, color: "#f59e0b" },
-        { label: "共振线宽 Γ", value: sampled.gamma, digits: 4, color: "#7c3aed" }
-      ];
+    if(insideArea(px,py,bottom)) {
+      const energy=clamp(unmapX(px,0,spectrum.maxEnergy,bottom.x,bottom.w),0,spectrum.maxEnergy);
+      return [{label:'入射能量 E',value:energy,digits:5,unit:'eV'},
+        {label:'透射率 T(E)',value:rtdTransmission(p,energy).transmission,digits:6,color:'#2563eb'},
+        {label:'第一共振能量 E₁',value:met.e1,digits:5,unit:'eV',color:'#7c3aed'}];
     }
     return null;
   });

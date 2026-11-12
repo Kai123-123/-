@@ -359,7 +359,7 @@ const achievementSeeds = [
   ["flash_explorer", "闪存探索者", "进入并体验闪存隧穿模块。", "extension", "F", "bronze", "module_session_count", "flash", 1, 200],
   ["flash_observer", "闪存观察员", "在闪存模块记录至少 2 个参数状态。", "extension", "I", "silver", "module_snapshot_count", "flash", 2, 210],
   ["rtd_explorer", "共振探索者", "进入并体验共振隧穿模块。", "extension", "R", "bronze", "module_session_count", "rtd", 1, 220],
-  ["rtd_observer", "负微分电阻观察员", "在 RTD 模块记录至少 2 个参数状态。", "extension", "N", "silver", "module_snapshot_count", "rtd", 2, 230]
+  ["rtd_observer", "共振透射观察员", "在 RTD 模块记录至少 2 个参数状态。", "extension", "N", "silver", "module_snapshot_count", "rtd", 2, 230]
 ];
 
 async function seedAchievements() {
@@ -966,7 +966,7 @@ const tutorKnowledgePoints = {
   stm: "距离对隧穿电流的影响",
   alpha: "α 能量与库仑势垒",
   flash: "栅压与 Fowler-Nordheim 隧穿",
-  rtd: "共振能级与负微分电阻"
+  rtd: "零偏压对称双势垒的共振能量与透射率"
 };
 
 const learningTaskLabels = {

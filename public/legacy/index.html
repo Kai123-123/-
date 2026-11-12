@@ -128,7 +128,7 @@
               <div class="learnly-card-content">
                 <div>
                   <h2>共振隧穿<br>器件</h2>
-                  <p>共振透射与负微分电阻</p>
+                  <p>对称双势垒与共振透射</p>
                 </div>
                 <button class="learnly-card-go" data-page="rtd">进入</button>
               </div>
@@ -393,10 +393,11 @@
       <aside class="panel-stack module-control-stack">
         <div class="card">
           <h2><span>■</span>案例摘要</h2>
-          <p>共振隧穿二极管由双势垒量子阱构成。当入射电子能量与阱内准束缚能级对准时，透射率出现尖峰；偏压继续增大后对准被破坏，电流下降。</p>
+          <p>零偏压下，两个等高、等宽的势垒构成对称量子阱。当入射电子能量与阱内准束缚态匹配时，透射率出现共振峰。改变结构参数，观察峰位与峰宽的变化。</p>
         </div>
         <div class="card">
           <h2><span>☰</span>共振隧穿参数</h2>
+          <p class="linked-help">外加偏压固定为 0 V，采用对称双势垒模型。</p>
           <div id="rtdControls"></div>
           <div class="action-row">
             <button class="primary-btn" data-action="update-rtd">更新共振隧穿图</button>
@@ -407,26 +408,26 @@
         <div class="card">
           <h2><span>ψ</span>核心公式</h2>
           <ul>
-            <li>E<sub>1</sub>≈π²ℏ²/(2m*w²)</li>
-            <li>T(E)≈Γ²/[(E-E<sub>r</sub>)²+Γ²]</li>
-            <li>共振峰后出现负微分电阻区，是共振隧穿二极管的关键器件特征。</li>
+            <li>无限深阱估算：E<sub>∞</sub>≈π²ℏ²/(2m*w²)</li>
+            <li>T(E)=|t(E)|²，采用分段常势传输矩阵计算</li>
+            <li>E₁ 为第一共振峰位置；理想对称结构在共振点 T≈1。零偏压平衡态净电流为零。</li>
           </ul>
         </div>
         <div class="card linked-card">
           <h2><span>◎</span>多重表征联动</h2>
-          <p class="linked-help">悬停或点击符号，同步定位双势垒、量子阱、共振能级和 I-V 曲线。</p>
+          <p class="linked-help">悬停或点击符号，同步定位双势垒、量子阱、共振能量和 T(E) 曲线。</p>
           <div class="symbol-row">
             <button class="symbol-chip" data-symbol="barrierHeight">Vb</button>
             <button class="symbol-chip" data-symbol="barrierWidth">b</button>
             <button class="symbol-chip" data-symbol="wellWidth">w</button>
-            <button class="symbol-chip" data-symbol="bias">V</button>
+            <button class="symbol-chip" data-symbol="mEff">m*</button>
             <button class="symbol-chip" data-symbol="e1">E₁</button>
-            <button class="symbol-chip" data-symbol="current">I</button>
+            <button class="symbol-chip" data-symbol="transmission">T</button>
           </div>
           <div class="formula-box">
-            <div><span class="formula-symbol" data-symbol="e1">E₁</span>≈π²ℏ²/(2m*<span class="formula-symbol" data-symbol="wellWidth">w</span>²)</div>
-            <div>T(E)≈Γ²/[(E-Er)²+Γ²]，Γ 受 <span class="formula-symbol" data-symbol="barrierWidth">b</span> 和 <span class="formula-symbol" data-symbol="barrierHeight">Vb</span> 影响</div>
-            <div><span class="formula-symbol" data-symbol="current">I</span> 随 <span class="formula-symbol" data-symbol="bias">V</span> 改变出现共振峰与负微分电阻</div>
+            <div>E∞≈π²ℏ²/(2<span class="formula-symbol" data-symbol="mEff">m*</span><span class="formula-symbol" data-symbol="wellWidth">w</span>²)，仅作无限深阱估算；<span class="formula-symbol" data-symbol="e1">E₁</span>由透射峰确定</div>
+            <div>共振峰宽受 <span class="formula-symbol" data-symbol="barrierWidth">b</span> 和 <span class="formula-symbol" data-symbol="barrierHeight">Vb</span> 及 m* 影响</div>
+            <div><span class="formula-symbol" data-symbol="transmission">T(E)</span>=|t(E)|²，V=0；共振透射不等同于存在净电流</div>
           </div>
           <div id="rtdLinkedInfo" class="linked-info">
             <strong>选择一个符号</strong>
