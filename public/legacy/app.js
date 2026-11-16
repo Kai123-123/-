@@ -1424,12 +1424,13 @@ const principleIntroConfigs = {
     title: "α 衰变：低概率穿出库仑势垒",
     subtitle: "α 粒子被库仑势垒束缚，依靠量子隧穿逃离原子核",
     accent: "#f97316",
-    duration: 32,
+    duration: 34,
     chapters: [
       { at: 0, title: "核内束缚" },
-      { at: .34, title: "撞击库仑势垒" },
-      { at: .58, title: "量子隧穿" },
-      { at: .82, title: "穿透概率" }
+      { at: .18, title: "库仑势垒与能量" },
+      { at: .36, title: "经典禁阻区" },
+      { at: .56, title: "波函数隧穿" },
+      { at: .8, title: "穿透概率与衰变" }
     ],
     draw: drawIntroAlpha
   },
@@ -1450,12 +1451,13 @@ const principleIntroConfigs = {
     title: "闪存隧穿：栅压控制电子写入",
     subtitle: "利用 Fowler-Nordheim 隧穿实现电荷存储，是闪存读写基础",
     accent: "#f59e0b",
-    duration: 35,
+    duration: 34,
     chapters: [
-      { at: 0, title: "建立控制栅电场" },
-      { at: .3, title: "势垒被拉斜" },
-      { at: .58, title: "电子隧穿" },
-      { at: .82, title: "写入与擦除" }
+      { at: 0, title: "器件结构" },
+      { at: .18, title: "建立氧化层电场" },
+      { at: .4, title: "隧穿写入" },
+      { at: .66, title: "浮栅电荷保持" },
+      { at: .82, title: "反向隧穿擦除" }
     ],
     draw: drawIntroFlash
   },
@@ -1818,95 +1820,127 @@ function drawIntroOneD(ctx, w, h, t) {
 }
 
 function drawIntroAlpha(ctx, w, h, t) {
-  const base = h * .76;
-  const nucleusX = w * .22;
-  const nucleusY = h * .59;
-  const barrierEnd = w * .72;
-  ctx.strokeStyle = "rgba(226,232,240,.5)";
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(w * .07, base); ctx.lineTo(w * .94, base); ctx.stroke();
+  const Zdaughter = 82, alphaCharge = 2, coulomb = 1.44;
+  const energy = 8.8, radius = 8;
+  const barrierAtRadius = coulomb * Zdaughter * alphaCharge / radius;
+  const turningPoint = coulomb * Zdaughter * alphaCharge / energy;
+  const rMax = Math.max(turningPoint * 1.45, radius * 2.5);
+  const x0 = w * .13, x1 = w * .92, base = h * .78;
+  const plotTop = h * .23;
+  const yMap = value => base - clamp(value, 0, 36) / 36 * (base - plotTop);
+  const xMap = r => x0 + r / rMax * (x1 - x0);
+  const xR = xMap(radius), xTurn = xMap(turningPoint), yEnergy = yMap(energy);
+  const phase = t < .18 ? 0 : t < .36 ? 1 : t < .56 ? 2 : t < .8 ? 3 : 4;
+  const phaseStart = [0, .18, .36, .56, .8][phase];
+  const phaseEnd = [.18, .36, .56, .8, 1][phase];
+  const progress = smoothIntro(clamp((t - phaseStart) / (phaseEnd - phaseStart), 0, 1));
+  const titles = [
+    "α 粒子被束缚在原子核内",
+    "粒子能量低于核表面库仑势垒",
+    "R 到 r₂ 之间是经典禁阻区",
+    "波函数在禁阻区内逐渐衰减",
+    "势垒外出现较弱出射波，发生 α 衰变"
+  ];
+  drawIntroLabel(ctx, titles[phase], w * .06, h * .08, "#fdba74", 21);
+
+  // Schematic nucleus at the left; the graph shares the same radial scale.
+  const nucleusX = xMap(radius * .46), nucleusY = h * .52;
+  const nucleusRadius = Math.max(25, Math.min(54, w * .035));
+  const glow = ctx.createRadialGradient(nucleusX, nucleusY, 0, nucleusX, nucleusY, nucleusRadius * 2.3);
+  glow.addColorStop(0, "rgba(251,191,36,.65)"); glow.addColorStop(.48, "rgba(239,68,68,.27)"); glow.addColorStop(1, "transparent");
+  ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(nucleusX, nucleusY, nucleusRadius * 2.3, 0, TAU); ctx.fill();
+  drawIntroParticle(ctx, nucleusX, nucleusY, nucleusRadius, "#ef4444");
+  [[-.35,-.2],[0,-.38],[.34,-.18],[-.25,.2],[.1,.31],[.36,.2]].forEach(([dx,dy], i) => {
+    drawIntroParticle(ctx, nucleusX + dx * nucleusRadius, nucleusY + dy * nucleusRadius, nucleusRadius * .17, i % 2 ? "#fca5a5" : "#fb923c", false);
+  });
+  drawIntroLabel(ctx, "原子核", nucleusX, nucleusY + nucleusRadius + 24, "#fecaca", 17, "center");
+
+  // Energy axis and Eα line.
+  ctx.strokeStyle = "rgba(226,232,240,.5)"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x0, base); ctx.lineTo(x1, base); ctx.stroke();
+  ctx.strokeStyle = "rgba(226,232,240,.22)"; ctx.lineWidth = 1;
+  for (let value = 0; value <= 30; value += 10) {
+    const y = yMap(value); ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+    drawIntroLabel(ctx, `${value}`, x0 - 12, y, "#94a3b8", 13, "right");
+  }
+  ctx.setLineDash([9, 7]); ctx.strokeStyle = "#67e8f9"; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(x0, yEnergy); ctx.lineTo(x1, yEnergy); ctx.stroke(); ctx.setLineDash([]);
+  drawIntroLabel(ctx, `Eα = ${energy.toFixed(1)} MeV`, x1 - 4, yEnergy - 12, "#67e8f9", 16, "right");
+
+  // Coulomb potential V(r)=1.44 Zd Zα/r (MeV·fm), with the nuclear radius as the inner edge.
   ctx.beginPath();
-  for (let i = 0; i <= 240; i++) {
-    const x = lerpNumber(nucleusX + 24, barrierEnd, i / 240);
-    const potential = Math.min(h * .5, (w * .22) / Math.max(x - nucleusX, 24) * h * .3);
-    const y = base - potential;
+  for (let i = 0; i <= 220; i++) {
+    const r = radius + (rMax - radius) * i / 220;
+    const x = xMap(r), y = yMap(coulomb * Zdaughter * alphaCharge / r);
     i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
   }
-  ctx.strokeStyle = "#f97316";
-  ctx.lineWidth = 4;
-  ctx.stroke();
-  ctx.fillStyle = "rgba(249,115,22,.13)";
-  ctx.beginPath();
-  ctx.moveTo(nucleusX + 24, base);
-  for (let i = 0; i <= 200; i++) {
-    const x = lerpNumber(nucleusX + 24, barrierEnd, i / 200);
-    const potential = Math.min(h * .5, (w * .22) / Math.max(x - nucleusX, 24) * h * .3);
-    ctx.lineTo(x, base - potential);
-  }
-  ctx.lineTo(barrierEnd, base); ctx.closePath(); ctx.fill();
-  const nucleusGlow = ctx.createRadialGradient(nucleusX, nucleusY, 0, nucleusX, nucleusY, 100);
-  nucleusGlow.addColorStop(0, "rgba(251,191,36,.78)");
-  nucleusGlow.addColorStop(.45, "rgba(239,68,68,.28)");
-  nucleusGlow.addColorStop(1, "transparent");
-  ctx.fillStyle = nucleusGlow;
-  ctx.beginPath(); ctx.arc(nucleusX, nucleusY, 100, 0, TAU); ctx.fill();
-  drawIntroParticle(ctx, nucleusX, nucleusY, 55, "#ef4444");
-  const nucleonOffsets = [[-23, -12], [0, -25], [23, -10], [-18, 18], [7, 19], [27, 17]];
-  nucleonOffsets.forEach(([dx, dy], index) => {
-    drawIntroParticle(ctx, nucleusX + dx, nucleusY + dy, 10, index % 2 ? "#fca5a5" : "#fb923c", false);
-  });
-  drawIntroLabel(ctx, "原子核", nucleusX, nucleusY + 88, "#fecaca", 18, "center");
+  ctx.strokeStyle = "#fb923c"; ctx.lineWidth = 4; ctx.stroke();
+  drawIntroLabel(ctx, "库仑势垒 V(r)", xMap(radius + 2), plotTop + 8, "#fdba74", 16);
 
-  let particleX;
-  let particleY;
-  let alpha = 1;
-  if (t < .48) {
-    const bouncePhase = t / .48 * TAU * 3;
-    const impact = Math.abs(Math.sin(bouncePhase));
-    particleX = nucleusX + impact * 31;
-    particleY = nucleusY + Math.cos(bouncePhase * 1.7) * 14;
-    const impactStrength = Math.max(0, 1 - Math.abs(Math.sin(bouncePhase)));
-    if (impactStrength > .65) {
-      ctx.save();
-      ctx.globalAlpha = (impactStrength - .65) / .35 * .65;
-      ctx.strokeStyle = "#fde68a";
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(nucleusX + 34, nucleusY, 25, -Math.PI / 2, Math.PI / 2); ctx.stroke();
-      ctx.restore();
-    }
-    drawIntroLabel(ctx, `撞击 ${Math.min(3, Math.floor(t / .16) + 1)} / 3`, nucleusX, h * .25, "#fde68a", 20, "center");
-  } else if (t < .68) {
-    const tunnel = smoothIntro((t - .48) / .2);
-    particleX = lerpNumber(nucleusX + 26, w * .62, tunnel);
-    particleY = nucleusY - Math.sin(tunnel * Math.PI) * h * .17;
-    alpha = lerpNumber(1, .34, tunnel);
+  // Shade only the classically forbidden interval R < r < r₂.
+  ctx.fillStyle = phase >= 2 ? "rgba(249,115,22,.2)" : "rgba(249,115,22,.1)";
+  ctx.beginPath(); ctx.moveTo(xR, yEnergy);
+  for (let i = 0; i <= 140; i++) {
+    const r = radius + (turningPoint - radius) * i / 140;
+    ctx.lineTo(xMap(r), yMap(coulomb * Zdaughter * alphaCharge / r));
+  }
+  ctx.lineTo(xTurn, yEnergy); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = "#facc15"; ctx.lineWidth = 2; ctx.setLineDash([5, 6]);
+  [ [xR, "R"], [xTurn, "r₂"] ].forEach(([x, label]) => {
+    ctx.beginPath(); ctx.moveTo(x, yEnergy - 8); ctx.lineTo(x, base); ctx.stroke();
+    drawIntroLabel(ctx, label, x, base + 22, "#fde68a", 16, "center");
+  });
+  ctx.setLineDash([]);
+  if (phase >= 2) drawIntroLabel(ctx, "经典禁阻区：V(r) > Eα", (xR + xTurn) / 2, yEnergy + 30, "#fed7aa", 16, "center");
+
+  // Illustrate the qualitative WKB envelope: oscillatory inside, decaying under the barrier, weak outgoing wave.
+  const tunnelProgress = phase < 3 ? 0 : phase === 3 ? progress : 1;
+  const revealEnd = phase === 4 ? x1 : xR + tunnelProgress * (xTurn - xR);
+  const waveMid = yEnergy + h * .06;
+  const amplitudeAt = r => {
+    if (r <= radius) return h * .028;
+    if (r <= turningPoint) return h * .028 * Math.exp(-2.5 * (r - radius) / (turningPoint - radius));
+    return h * .004;
+  };
+  ctx.save(); ctx.beginPath(); ctx.rect(x0, plotTop, Math.max(0, revealEnd - x0), base - plotTop); ctx.clip();
+  ctx.beginPath();
+  for (let i = 0; i <= 320; i++) {
+    const r = rMax * i / 320;
+    const x = xMap(r);
+    const amp = amplitudeAt(r);
+    const y = waveMid + amp * Math.sin((r - radius) * (r < turningPoint ? 2.7 : 1.6) * TAU / 2.6 + t * 3);
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  }
+  ctx.strokeStyle = "rgba(250,204,21,.9)"; ctx.lineWidth = 3; ctx.stroke();
+  ctx.beginPath();
+  for (let i = 0; i <= 220; i++) {
+    const r = radius + (turningPoint - radius) * i / 220;
+    const x = xMap(r), y = waveMid - amplitudeAt(r) * 1.35;
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  }
+  ctx.strokeStyle = "rgba(253,186,116,.65)"; ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.stroke();
+  ctx.restore(); ctx.setLineDash([]);
+  drawIntroLabel(ctx, "波函数振幅包络（示意）", xR + 14, waveMid + h * .055, "#fde68a", 14);
+
+  if (phase === 0) {
+    drawIntroLabel(ctx, "α 粒子", nucleusX, nucleusY - nucleusRadius - 16, "#fde68a", 16, "center");
+  } else if (phase === 1) {
+    drawIntroLabel(ctx, `V(R) ≈ ${barrierAtRadius.toFixed(1)} MeV > Eα`, xR + 16, yMap(barrierAtRadius) - 12, "#fdba74", 15);
+  } else if (phase === 2) {
+    drawIntroLabel(ctx, "经典粒子无法越过此区", (xR + xTurn) / 2, h * .36, "#fed7aa", 17, "center");
+  } else if (phase === 3) {
+    const particleX = lerpNumber(xR, xTurn, progress);
+    const particleY = waveMid + amplitudeAt(radius + progress * (turningPoint - radius)) * Math.sin(t * 20);
+    ctx.globalAlpha = .35 + .65 * (1 - progress * .7);
+    drawIntroParticle(ctx, particleX, particleY, 8, "#facc15"); ctx.globalAlpha = 1;
+    drawIntroLabel(ctx, "振幅随穿透距离衰减", (xR + xTurn) / 2, h * .36, "#fde68a", 17, "center");
   } else {
-    const escape = smoothIntro((t - .68) / .32);
-    particleX = lerpNumber(w * .62, w * .9, escape);
-    particleY = nucleusY - h * .12 - Math.sin(escape * Math.PI) * h * .1;
-    alpha = lerpNumber(.34, 1, escape);
+    drawIntroLabel(ctx, "r₂ = C Zd Zα / Eα", w * .91, h * .16, "#cbd5e1", 15, "right");
+    drawIntroLabel(ctx, "势垒越宽 / 越高 → 穿透概率越低", w * .91, h * .21, "#fdba74", 15, "right");
+    drawIntroLabel(ctx, "Eα 越高 → 禁阻区越窄 → 衰变越快", w * .91, h * .26, "#67e8f9", 15, "right");
+    drawIntroLabel(ctx, `r₂ ≈ ${turningPoint.toFixed(1)} fm`, xTurn, yEnergy - 18, "#fde68a", 14, "center");
   }
-  drawIntroTrail(ctx, nucleusX + 18, nucleusY, particleX, particleY, "#facc15", .36);
-  ctx.globalAlpha = alpha;
-  drawIntroParticle(ctx, particleX, particleY, 13, "#facc15");
-  ctx.globalAlpha = 1;
-  if (t > .48 && t < .82) {
-    drawIntroSparks(ctx, particleX, particleY, t * 10, "#fde68a", 7);
-  }
-  if (t > .48 && t < .82) {
-    ctx.save();
-    ctx.strokeStyle = "rgba(250,204,21,.55)";
-    ctx.lineWidth = 4;
-    ctx.setLineDash([7, 8]);
-    ctx.beginPath(); ctx.moveTo(nucleusX + 20, nucleusY); ctx.lineTo(particleX, particleY); ctx.stroke();
-    ctx.restore();
-  }
-  if (t > .78) {
-    ctx.globalAlpha = smoothIntro((t - .78) / .22);
-    drawIntroLabel(ctx, "隧穿成功", w * .77, h * .26, "#fde68a", 22, "center");
-    drawIntroLabel(ctx, "隧穿概率极低", w * .77, h * .33, "#fbbf24", 17, "center");
-    ctx.globalAlpha = 1;
-  }
+  drawIntroLabel(ctx, "α 粒子能量与库仑势垒", x0, h * .94, "#cbd5e1", 14);
 }
 
 function drawIntroSTM(ctx, w, h, t) {
@@ -2006,81 +2040,83 @@ function drawIntroSTM(ctx, w, h, t) {
 }
 
 function drawIntroFlash(ctx, w, h, t) {
-  const left = w * .16;
-  const right = w * .84;
-  const writePhase = t < .5;
-  const localT = writePhase ? t / .5 : (t - .5) / .5;
+  const left = w * .16, right = w * .84;
   const controlGate = { y: h * .13, h: h * .1 };
   const oxide = { y: h * .27, h: h * .22 };
   const floatingGate = { y: h * .53, h: h * .1 };
   const substrate = { y: h * .67, h: h * .17 };
+  const introPhase = t < .18 ? 0 : t < .4 ? 1 : t < .66 ? 2 : t < .82 ? 3 : 4;
+  const phaseStart = [0, .18, .4, .66, .82][introPhase];
+  const phaseEnd = [0.18, .4, .66, .82, 1][introPhase];
+  const phaseT = clamp((t - phaseStart) / (phaseEnd - phaseStart), 0, 1);
+  const smooth = smoothIntro(phaseT);
+  const writePhase = introPhase < 3;
   const drawLayer = (layer, fill, stroke) => {
-    ctx.fillStyle = fill;
-    ctx.fillRect(left, layer.y, right - left, layer.h);
-    ctx.strokeStyle = stroke;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(left, layer.y, right - left, layer.h);
+    ctx.fillStyle = fill; ctx.fillRect(left, layer.y, right - left, layer.h);
+    ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.strokeRect(left, layer.y, right - left, layer.h);
   };
   drawLayer(controlGate, "rgba(37,99,235,.3)", "#60a5fa");
   drawLayer(oxide, "rgba(245,158,11,.14)", "#fbbf24");
   drawLayer(floatingGate, "rgba(124,58,237,.26)", "#c4b5fd");
   drawLayer(substrate, "rgba(100,116,139,.34)", "#94a3b8");
   drawIntroLabel(ctx, "控制栅", (left + right) / 2, controlGate.y + controlGate.h / 2, "#bfdbfe", 18, "center");
-  drawIntroLabel(ctx, "二氧化硅势垒", (left + right) / 2, oxide.y + 22, "#fde68a", 18, "center");
+  drawIntroLabel(ctx, "二氧化硅隧穿层", (left + right) / 2, oxide.y + 22, "#fde68a", 18, "center");
   drawIntroLabel(ctx, "浮栅", (left + right) / 2, floatingGate.y + floatingGate.h / 2, "#ddd6fe", 18, "center");
   drawIntroLabel(ctx, "硅衬底", (left + right) / 2, substrate.y + substrate.h / 2, "#cbd5e1", 18, "center");
-  drawIntroLabel(ctx, writePhase ? "写入阶段：栅压拉斜势垒，电子进入浮栅" : "擦除阶段：反向电压使电子返回衬底", w * .06, h * .07, writePhase ? "#67e8f9" : "#c4b5fd", 21);
 
-  const slopeDirection = writePhase ? -1 : 1;
-  const slope = 38 + 72 * smoothIntro(localT);
-  const barrierLeftY = oxide.y + oxide.h * .72 + slopeDirection * slope * .35;
-  const barrierRightY = oxide.y + oxide.h * .72 - slopeDirection * slope * .65;
-  ctx.strokeStyle = "#f59e0b";
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.moveTo(left, barrierLeftY);
-  ctx.lineTo(right, barrierRightY);
-  ctx.stroke();
-  ctx.strokeStyle = "rgba(251,191,36,.22)";
-  ctx.lineWidth = 18;
-  ctx.stroke();
-  ctx.strokeStyle = "#38bdf8";
-  ctx.setLineDash([8, 7]);
-  ctx.beginPath();
-  ctx.moveTo(left, writePhase ? substrate.y + 16 : floatingGate.y + floatingGate.h - 12);
-  ctx.lineTo(right, writePhase ? substrate.y + 16 : floatingGate.y + floatingGate.h - 12);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  drawIntroLabel(ctx, "电子波函数", left - 12, h * .62, "#7dd3fc", 17, "right");
+  const titles = ["器件结构：四层结构共同完成电荷存储", "建立氧化层电场：栅压使势垒变薄", "写入阶段：电子发生 Fowler-Nordheim 隧穿", "保持阶段：浮栅电荷使信息被保存", "擦除阶段：反向电压使电子返回衬底"];
+  drawIntroLabel(ctx, titles[introPhase], w * .06, h * .07, introPhase === 4 ? "#c4b5fd" : "#67e8f9", 20);
 
-  const progress = smoothIntro(localT);
-  const electronX = (left + right) / 2 + Math.sin(localT * TAU * 1.5) * 22;
-  const electronY = writePhase
-    ? lerpNumber(substrate.y + 18, floatingGate.y + floatingGate.h - 18, progress)
-    : lerpNumber(floatingGate.y + floatingGate.h - 18, substrate.y + 18, progress);
-  drawIntroTrail(
-    ctx,
-    electronX,
-    writePhase ? substrate.y + 18 : floatingGate.y + floatingGate.h - 18,
-    electronX,
-    electronY,
-    "#facc15",
-    .52
-  );
-  drawIntroWavePacket(ctx, electronX, electronY, 16, 11, "rgba(250,204,21,.8)", t * 18);
-  drawIntroParticle(ctx, electronX, electronY, 7, "#facc15");
+  const slopeAmount = introPhase === 0 ? 0 : introPhase === 1 ? 72 * smooth : introPhase === 4 ? 72 * (1 - smooth) : 72;
+  const slopeDirection = introPhase === 4 ? 1 : -1;
+  const barrierLeftY = oxide.y + oxide.h * .72 + slopeDirection * slopeAmount * .35;
+  const barrierRightY = oxide.y + oxide.h * .72 - slopeDirection * slopeAmount * .65;
+  ctx.strokeStyle = "rgba(251,191,36,.2)"; ctx.lineWidth = 18;
+  ctx.beginPath(); ctx.moveTo(left, barrierLeftY); ctx.lineTo(right, barrierRightY); ctx.stroke();
+  ctx.strokeStyle = "#f59e0b"; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(left, barrierLeftY); ctx.lineTo(right, barrierRightY); ctx.stroke();
 
-  const storedCharge = writePhase ? progress : 1 - progress;
-  for (let i = 0; i < 7; i++) {
-    const chargeX = left + 70 + i * (right - left - 140) / 6;
-    const chargeY = floatingGate.y + floatingGate.h / 2 + Math.sin(i * 1.6) * 8;
-    ctx.globalAlpha = storedCharge * .88;
-    drawIntroParticle(ctx, chargeX, chargeY, 5, "#c4b5fd", false);
+  if (introPhase === 1 || introPhase === 2 || introPhase === 4) {
+    const arrowY = introPhase === 4 ? floatingGate.y + floatingGate.h - 18 : substrate.y + 18;
+    const arrowX = w * .5;
+    const arrowLen = introPhase === 1 ? 45 + 55 * smooth : 90;
+    const direction = introPhase === 4 ? -1 : 1;
+    ctx.strokeStyle = "#38bdf8"; ctx.fillStyle = "#38bdf8"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(arrowX, arrowY); ctx.lineTo(arrowX, arrowY - direction * arrowLen); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(arrowX, arrowY - direction * arrowLen); ctx.lineTo(arrowX - 7, arrowY - direction * (arrowLen - 14)); ctx.lineTo(arrowX + 7, arrowY - direction * (arrowLen - 14)); ctx.closePath(); ctx.fill();
+    drawIntroLabel(ctx, introPhase === 4 ? "反向电场" : "氧化层电场 Eox", arrowX + 16, arrowY - direction * arrowLen * .55, "#7dd3fc", 16, "left");
+  }
+
+  const storedCharge = introPhase < 2 ? 0 : introPhase === 2 ? smooth : introPhase === 3 ? 1 : 1 - smooth;
+  for (let i = 0; i < 10; i++) {
+    const chargeX = left + 46 + i * (right - left - 92) / 9;
+    const chargeY = floatingGate.y + floatingGate.h / 2 + Math.sin(i * 1.7) * 10;
+    ctx.globalAlpha = storedCharge * .9;
+    drawIntroParticle(ctx, chargeX, chargeY, 5, "#facc15", false);
   }
   ctx.globalAlpha = 1;
-  const voltage = writePhase ? lerpNumber(2, 12, smoothIntro(localT)) : lerpNumber(-2, -12, smoothIntro(localT));
-  drawIntroLabel(ctx, `栅压 Vg = ${voltage.toFixed(1)} V`, w * .06, h * .18, writePhase ? "#67e8f9" : "#c4b5fd", 19);
-  drawIntroLabel(ctx, writePhase ? "Fowler-Nordheim 隧穿写入" : "反向隧穿擦除", w * .94, h * .18, "#f8fafc", 19, "right");
+  if (introPhase === 3) drawIntroLabel(ctx, "已存储 · 浮栅带负电荷", w * .94, h * .18, "#facc15", 18, "right");
+
+  if (introPhase === 2 || introPhase === 4) {
+    const reverse = introPhase === 4;
+    const count = 5;
+    for (let i = 0; i < count; i++) {
+      const p = clamp((smooth + i * .12) % 1, 0, 1);
+      const electronX = (left + right) / 2 + Math.sin((t + i * .08) * TAU * 2) * 30;
+      const fromY = reverse ? floatingGate.y + floatingGate.h - 16 : substrate.y + 18;
+      const toY = reverse ? substrate.y + 18 : floatingGate.y + floatingGate.h - 16;
+      const electronY = lerpNumber(fromY, toY, p);
+      drawIntroTrail(ctx, electronX, fromY, electronX, electronY, reverse ? "#93c5fd" : "#facc15", .42);
+      drawIntroWavePacket(ctx, electronX, electronY, 15, 10, reverse ? "rgba(147,197,253,.75)" : "rgba(250,204,21,.8)", t * 18 + i);
+      drawIntroParticle(ctx, electronX, electronY, 6, reverse ? "#93c5fd" : "#facc15");
+    }
+  }
+  const voltage = introPhase === 4 ? lerpNumber(-2, -12, smooth) : introPhase >= 1 ? lerpNumber(2, 12, introPhase === 1 ? smooth : 1) : 0;
+  drawIntroLabel(ctx, `栅压 Vg = ${voltage.toFixed(1)} V`, w * .06, h * .18, voltage < 0 ? "#c4b5fd" : "#67e8f9", 18);
+  if (introPhase === 1 || introPhase === 2) drawIntroLabel(ctx, "Eox ≈ Veff / tox", w * .94, h * .18, "#fde68a", 17, "right");
+  if (introPhase === 2) drawIntroLabel(ctx, "JFN ∝ Eox² exp(−BφB³ᐟ²/Eox)", w * .94, h * .23, "#f8fafc", 15, "right");
+  if (introPhase === 4) drawIntroLabel(ctx, "反向隧穿擦除", w * .94, h * .18, "#c4b5fd", 18, "right");
+  drawIntroLabel(ctx, "Vg = 12 V · tox = 8 nm · φB = 3.2 eV", w * .06, h * .93, "#94a3b8", 14);
 }
 
 function drawIntroRTD(ctx, w, h, t) {
@@ -4106,7 +4142,6 @@ function renderAIPanel(module) {
       <textarea id="aiInput-${module}" class="ai-input" placeholder="向 AI 询问当前图像、参数变化或任务解释"></textarea>
       <button class="ai-send" data-ai-action="send" data-ai-module="${module}" ${isLoading ? "disabled" : ""}>发送</button>
     </div>
-    <p class="ai-config-tip">提示：DeepSeek Key 配在 Dify 后台，本平台只需要 Dify App API Key。</p>
   `;
 }
 
@@ -4485,10 +4520,10 @@ function saveCanvas(canvasId, filename) {
 
 function setupControls() {
   [
-    ["V0", { label: "势垒高度 V₀", min: 0.1, max: 20, step: 0.1, unit: "a.u.", icon: "V₀", format: 1 }],
-    ["a", { label: "势垒宽度 a", min: 0.1, max: 5, step: 0.01, unit: "a.u.", icon: "a", format: 2 }],
-    ["m", { label: "粒子质量 m", min: 0.1, max: 5, step: 0.01, unit: "a.u.", icon: "m", format: 2 }],
-    ["E", { label: "粒子能量 E", min: 0.05, max: 20, step: 0.1, unit: "a.u.", icon: "E", format: 1 }]
+    ["V0", { label: "势垒高度 V₀", min: 1, max: 15, step: 0.1, unit: "a.u.", icon: "V₀", format: 1 }],
+    ["a", { label: "势垒宽度 a", min: 0.1, max: 4, step: 0.01, unit: "a.u.", icon: "a", format: 2 }],
+    ["m", { label: "粒子质量 m/mₑ", min: 1, max: 5, step: 0.1, unit: "", icon: "m", format: 1 }],
+    ["E", { label: "粒子能量 E", min: 0.1, max: 20, step: 0.1, unit: "a.u.", icon: "E", format: 1 }]
   ].forEach(([key, cfg]) => makeControl($("#oneDControls"), cfg, state.oneD, key, drawOneD));
 
   [
@@ -4498,30 +4533,30 @@ function setupControls() {
   ].forEach(([key, cfg]) => makeControl($("#rangeControls"), cfg, state.oneD, key, drawOneD));
 
   [
-    ["Zd", { label: "子核电荷数 Zd", min: 50, max: 100, step: 1, unit: "", icon: "Z", format: 0 }],
-    ["Ealpha", { label: "α 能量 Eα", min: 3, max: 12, step: 0.1, unit: "MeV", icon: "Eα", format: 1 }],
-    ["R", { label: "核半径 R", min: 5, max: 12, step: 0.1, unit: "fm", icon: "R", format: 1 }],
-    ["well", { label: "核内势阱", min: -60, max: 0, step: 1, unit: "MeV", icon: "V", format: 0 }]
+    ["Zd", { label: "子核电荷数 Zd", min: 70, max: 92, step: 1, unit: "", icon: "Z", format: 0 }],
+    ["Ealpha", { label: "α 能量 Eα", min: 4, max: 10, step: 0.1, unit: "MeV", icon: "Eα", format: 1 }],
+    ["R", { label: "核半径 R", min: 6, max: 10, step: 0.1, unit: "fm", icon: "R", format: 1 }],
+    ["well", { label: "核内势阱", min: -50, max: -15, step: 1, unit: "MeV", icon: "V", format: 0 }]
   ].forEach(([key, cfg]) => makeControl($("#alphaControls"), cfg, state.alpha, key, drawAlpha));
 
   [
-    ["d", { label: "探针距离 d", min: 2, max: 10, step: 0.1, unit: "Å", icon: "d", format: 1 }],
-    ["phi", { label: "功函数 φ", min: 1, max: 8, step: 0.1, unit: "eV", icon: "φ", format: 1 }],
-    ["bias", { label: "偏置电压 Vb", min: 0.01, max: 2, step: 0.01, unit: "V", icon: "Vb", format: 2 }]
+    ["d", { label: "探针距离 d", min: 2, max: 8, step: 0.1, unit: "Å", icon: "d", format: 1 }],
+    ["phi", { label: "功函数 φ", min: 2, max: 6, step: 0.1, unit: "eV", icon: "φ", format: 1 }],
+    ["bias", { label: "偏置电压 Vb", min: 0.01, max: 1, step: 0.01, unit: "V", icon: "Vb", format: 2 }]
   ].forEach(([key, cfg]) => makeControl($("#stmControls"), cfg, state.stm, key, drawSTM));
 
   [
-    ["gateV", { label: "控制栅电压 Vg", min: 4, max: 20, step: 0.1, unit: "V", icon: "Vg", format: 1 }],
-    ["tox", { label: "隧穿氧化层 tox", min: 4, max: 14, step: 0.1, unit: "nm", icon: "tox", format: 1 }],
-    ["phi", { label: "Si/SiO₂ 势垒 φB", min: 2.2, max: 4.2, step: 0.1, unit: "eV", icon: "φB", format: 1 }],
-    ["vth", { label: "阈值/平带修正", min: 0, max: 4, step: 0.1, unit: "V", icon: "Vth", format: 1 }]
+    ["gateV", { label: "控制栅电压 Vg", min: 6, max: 16, step: 0.1, unit: "V", icon: "Vg", format: 1 }],
+    ["tox", { label: "隧穿氧化层 tox", min: 6, max: 12, step: 0.1, unit: "nm", icon: "tox", format: 1 }],
+    ["phi", { label: "Si/SiO₂ 势垒 φB", min: 2.8, max: 3.6, step: 0.1, unit: "eV", icon: "φB", format: 1 }],
+    ["vth", { label: "阈值/平带修正", min: 0, max: 2, step: 0.1, unit: "V", icon: "Vth", format: 1 }]
   ].forEach(([key, cfg]) => makeControl($("#flashControls"), cfg, state.flash, key, drawFlash));
 
   [
-    ["barrierHeight", { label: "势垒高度 Vb", min: 0.15, max: 0.8, step: 0.01, unit: "eV", icon: "Vb", format: 2 }],
-    ["barrierWidth", { label: "单个势垒宽度", min: 0.8, max: 4, step: 0.1, unit: "nm", icon: "b", format: 1 }],
-    ["wellWidth", { label: "量子阱宽度", min: 3, max: 10, step: 0.1, unit: "nm", icon: "w", format: 1 }],
-    ["mEff", { label: "有效质量 m*", min: 0.04, max: 0.2, step: 0.001, unit: "m₀", icon: "m*", format: 3 }]
+    ["barrierHeight", { label: "势垒高度 Vb", min: 0.25, max: 0.6, step: 0.01, unit: "eV", icon: "Vb", format: 2 }],
+    ["barrierWidth", { label: "单个势垒宽度", min: 1, max: 2.5, step: 0.1, unit: "nm", icon: "b", format: 1 }],
+    ["wellWidth", { label: "量子阱宽度", min: 4, max: 8, step: 0.1, unit: "nm", icon: "w", format: 1 }],
+    ["mEff", { label: "有效质量 m*", min: 0.05, max: 0.1, step: 0.001, unit: "m₀", icon: "m*", format: 3 }]
   ].forEach(([key, cfg]) => makeControl($("#rtdControls"), cfg, state.rtd, key, drawRTD));
 }
 
@@ -4587,6 +4622,10 @@ function drawAxisLabels(ctx, x, y, w, h, xticks, yticks, xMap, yMap, color = "#6
 function drawLegend(ctx, items, x, y) {
   ctx.save();
   ctx.font = `${isAnalysisView() ? 15 : 16}px Microsoft YaHei UI`;
+  // Canvas text alignment is inherited from the surrounding plot; set it here
+  // so centered axis labels cannot pull legend text back over the color swatch.
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
   items.forEach(([label, color, dash], i) => {
     const ly = y + i * (isAnalysisView() ? 24 : 27);
     ctx.strokeStyle = color;
@@ -4598,7 +4637,7 @@ function drawLegend(ctx, items, x, y) {
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = "#12213f";
-    ctx.fillText(label, x + 38, ly + 4);
+    ctx.fillText(label, x + 38, ly);
   });
   ctx.restore();
 }
